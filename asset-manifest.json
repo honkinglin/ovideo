@@ -1,23 +1,23 @@
 {
   "files": {
-    "main.css": "/ovideo/static/css/main.1c3723cc.chunk.css",
-    "main.js": "/ovideo/static/js/main.e7f7fee4.chunk.js",
-    "main.js.map": "/ovideo/static/js/main.e7f7fee4.chunk.js.map",
+    "main.css": "/ovideo/static/css/main.4597bda3.chunk.css",
+    "main.js": "/ovideo/static/js/main.1c3dd02f.chunk.js",
+    "main.js.map": "/ovideo/static/js/main.1c3dd02f.chunk.js.map",
     "runtime-main.js": "/ovideo/static/js/runtime-main.6ef1a5b9.js",
     "runtime-main.js.map": "/ovideo/static/js/runtime-main.6ef1a5b9.js.map",
-    "static/js/2.d65f8128.chunk.js": "/ovideo/static/js/2.d65f8128.chunk.js",
-    "static/js/2.d65f8128.chunk.js.map": "/ovideo/static/js/2.d65f8128.chunk.js.map",
+    "static/js/2.c5ef40e2.chunk.js": "/ovideo/static/js/2.c5ef40e2.chunk.js",
+    "static/js/2.c5ef40e2.chunk.js.map": "/ovideo/static/js/2.c5ef40e2.chunk.js.map",
     "index.html": "/ovideo/index.html",
-    "precache-manifest.ca5883005ec86ae3ef6526a9f290a36d.js": "/ovideo/precache-manifest.ca5883005ec86ae3ef6526a9f290a36d.js",
+    "precache-manifest.ec02c4005fbf56caa386aec300c1d6c8.js": "/ovideo/precache-manifest.ec02c4005fbf56caa386aec300c1d6c8.js",
     "service-worker.js": "/ovideo/service-worker.js",
-    "static/css/main.1c3723cc.chunk.css.map": "/ovideo/static/css/main.1c3723cc.chunk.css.map",
-    "static/js/2.d65f8128.chunk.js.LICENSE.txt": "/ovideo/static/js/2.d65f8128.chunk.js.LICENSE.txt",
+    "static/css/main.4597bda3.chunk.css.map": "/ovideo/static/css/main.4597bda3.chunk.css.map",
+    "static/js/2.c5ef40e2.chunk.js.LICENSE.txt": "/ovideo/static/js/2.c5ef40e2.chunk.js.LICENSE.txt",
     "static/media/logo.svg": "/ovideo/static/media/logo.5d5d9eef.svg"
   },
   "entrypoints": [
     "static/js/runtime-main.6ef1a5b9.js",
-    "static/js/2.d65f8128.chunk.js",
-    "static/css/main.1c3723cc.chunk.css",
-    "static/js/main.e7f7fee4.chunk.js"
+    "static/js/2.c5ef40e2.chunk.js",
+    "static/css/main.4597bda3.chunk.css",
+    "static/js/main.1c3dd02f.chunk.js"
   ]
 }

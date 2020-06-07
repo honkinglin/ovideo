@@ -1,11 +1,11 @@
 self.__precacheManifest = (self.__precacheManifest || []).concat([
   {
-    "revision": "e368a4604df8fd057cd8026cb203b26f",
+    "revision": "dda97490fdf582ab3f8a3cabf64b199e",
     "url": "/ovideo/index.html"
   },
   {
-    "revision": "ac6f85cd62387f0479e1",
-    "url": "/ovideo/static/css/main.4597bda3.chunk.css"
+    "revision": "cccd5f6e21592b25f022",
+    "url": "/ovideo/static/css/main.429b3978.chunk.css"
   },
   {
     "revision": "d16cab191150e90b2a22",
@@ -16,15 +16,15 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
     "url": "/ovideo/static/js/2.c5ef40e2.chunk.js.LICENSE.txt"
   },
   {
-    "revision": "ac6f85cd62387f0479e1",
-    "url": "/ovideo/static/js/main.1c3dd02f.chunk.js"
+    "revision": "cccd5f6e21592b25f022",
+    "url": "/ovideo/static/js/main.c6932442.chunk.js"
   },
   {
     "revision": "c1e3553b10d24d3ce610",
     "url": "/ovideo/static/js/runtime-main.6ef1a5b9.js"
   },
   {
-    "revision": "5d5d9eefa31e5e13a6610d9fa7a283bb",
-    "url": "/ovideo/static/media/logo.5d5d9eef.svg"
+    "revision": "2f6ed3a3de23a9f7c38d77c99d033d3e",
+    "url": "/ovideo/static/media/logo.2f6ed3a3.svg"
   }
 ]);

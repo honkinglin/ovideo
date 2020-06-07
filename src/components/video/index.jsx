@@ -2,23 +2,23 @@ import React, { useState, useRef } from 'react';
 import {
     YoutubeOutlined,
     SettingOutlined,
-    RetweetOutlined,
-    UnorderedListOutlined,
     LinkOutlined,
 } from '@ant-design/icons';
-import { Popover, Button } from 'antd';
+import { Popover } from 'antd';
+import Tools from './Tools';
+import LinkModal from './LinkModal';
 import './style.less';
-
-const VIDEO_SPEEDS = [2, 1.75, 1.5, 1.25, 1, 0.75];
 
 export default function Video() {
     const [playVideo, setPlayVideo] = useState(null);
     const [toolVisible, setToolVisible] = useState(false);
     const [playList, setPlayList] = useState([]);
+    const [isDraging, setIsDraging] = useState(false);
+    const [linkVisible, setLinkVisible] = useState(false);
+
     const videoRef = useRef();
 
     function fileChange(e) {
-        console.dir(e.target)
         const file = e.target.files[0];
         const filePath = URL.createObjectURL(file);
         setPlayVideo(filePath);
@@ -26,76 +26,56 @@ export default function Video() {
             url: filePath,
             name: file.name,
         }));
-        console.log(filePath);
     }
 
-    function onSpeedChange(speed) {
-        if (!playVideo) return;
-        videoRef.current.playbackRate = parseFloat(speed);
+    function onDropHandler(e) {
+        e.preventDefault();
+
+        const file = e.dataTransfer.files[0];
+        const filePath = URL.createObjectURL(file);
+        setPlayVideo(filePath);
+        setPlayList(playList.concat({
+            url: filePath,
+            name: file.name,
+        }));
     }
 
-    function renderTools() {
-        return (
-            <div className="o-video__ctrs-tools">
-                <div className="tools-body">
-                    {
-                        playList.length ? (
-                            <ul className="tools-list">
-                                {
-                                    playList.map((item) => (
-                                        <li
-                                            className="item"
-                                            key={item.url}
-                                            onClick={() => setPlayVideo(item.url)}
-                                        >{item.name}</li>
-                                    ))
-                                }
-                            </ul>
-                        ) : (
-                            <div className="tools-list-empty">
-                                <UnorderedListOutlined style={{ fontSize: 26, margin: 12 }} />
-                                <p>当前播放列表为空</p>
-                            </div>
-                        )
-                    }
-                </div>
-                <div className="tools-footer">
-                    <RetweetOutlined className="icon-loop" />
-                    <Popover
-                        title="倍速播放"
-                        placement="topRight"
-                        overlayClassName="speeds-popup"
-                        content={(
-                            <ul className="speeds-list">
-                                {
-                                    VIDEO_SPEEDS.map((speed) => (
-                                        <li
-                                            key={speed}
-                                            className="item"
-                                            onClick={() => onSpeedChange(speed)}
-                                        >{speed}x</li>
-                                    ))
-                                }
-                            </ul>
-                        )}
-                    >
-                        <Button size="small" disabled={!playVideo} style={{ width: 60 }}>1x</Button>
-                    </Popover>
-                </div>
-            </div>
-        )
+    function handleLinkModalOk(url) {
+        setLinkVisible(false);
+        setPlayVideo(url);
+        const name = url.split('/').slice(-1)[0];
+        setPlayList(playList.concat({ url, name }));
     }
 
     function render() {
         return (<div className="o-video">
             {
                 playVideo ? (
-                    <video className="o-video__tag" ref={videoRef} src={playVideo} controls></video>
+                    <video
+                        controls
+                        crossOrigin="anonymous"
+                        className="o-video__tag"
+                        ref={videoRef}
+                        src={playVideo}
+                    ></video>
                 ) : (
-                    <label htmlFor="file" className="o-video__empty">
+                    <label
+                        draggable
+                        htmlFor="file"
+                        className='o-video__empty'
+                        onDragEnter={() => setIsDraging(true)}
+                        onDragLeave={() => setIsDraging(false)}
+                        onDragOver={e => e.preventDefault()}
+                        onDrop={onDropHandler}
+                    >
                         <YoutubeOutlined style={{ fontSize: 80 }} />
-                        <span>点击或拖拽视频文件</span>
-                        <input type="file" id="file" accept="video/*" onChange={fileChange} />
+                        <span>{isDraging ? '松开文件' : '点击或拖拽视频文件'}</span>
+                        <input
+                            id="file"
+                            type="file"
+                            accept="video/*"
+                            onChange={fileChange}
+                        />
                     </label>
                 )
             }
@@ -103,14 +83,31 @@ export default function Video() {
                 placement="bottomRight"
                 overlayClassName="tools-popup"
                 title="播放列表"
-                content={renderTools()}
+                content={
+                    <Tools
+                        videoRef={videoRef}
+                        playList={playList}
+                        playVideo={playVideo}
+                        setPlayVideo={setPlayVideo}
+                    />
+                }
                 trigger="click"
                 visible={toolVisible}
                 onVisibleChange={setToolVisible}
             >
                 <SettingOutlined className="o-video__ctrs"/>
             </Popover>
-            <LinkOutlined className="o-video__link" />
+
+            <LinkOutlined
+                className="o-video__link"
+                onClick={() => setLinkVisible(true)}
+            />
+            <LinkModal
+                visible={linkVisible}
+                setVisible={setLinkVisible}
+                handleOk={handleLinkModalOk}
+                onCancel={() => setLinkVisible(false)}
+            />
         </div>)
     }
 

@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
 } from "react"
+import mpegts from "mpegts.js"
 import {
   FileVideo,
   FolderOpen,
@@ -50,6 +51,20 @@ type VideoItem = {
 }
 
 const PLAYBACK_SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
+const TRANSPORT_STREAM_REGEX = /\.(ts|m2ts|mts)$/i
+
+function isTransportStreamSource(item: VideoItem | null) {
+  if (!item) return false
+  if (item.name && TRANSPORT_STREAM_REGEX.test(item.name)) {
+    return true
+  }
+  try {
+    const url = new URL(item.src)
+    return TRANSPORT_STREAM_REGEX.test(url.pathname)
+  } catch {
+    return TRANSPORT_STREAM_REGEX.test(item.src)
+  }
+}
 
 function getFileLabel(file: File): string {
   const relativePath = (file as File & { webkitRelativePath?: string })
@@ -79,11 +94,16 @@ export function VideoPlayer() {
   const [urlValue, setUrlValue] = useState("")
   const [urlError, setUrlError] = useState<string | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [isDragActive, setIsDragActive] = useState(false)
+  const [tsUnsupported, setTsUnsupported] = useState(false)
 
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const folderInputRef = useRef<HTMLInputElement | null>(null)
   const objectUrlsRef = useRef(new Map<string, string>())
+  const mpegtsPlayerRef =
+    useRef<ReturnType<typeof mpegts.createPlayer> | null>(null)
+  const playbackRateRef = useRef(playbackRate)
 
   const currentItem = useMemo(
     () => playlist.find((item) => item.id === currentId) ?? null,
@@ -110,24 +130,112 @@ export function VideoPlayer() {
   }, [playlist, currentId])
 
   useEffect(() => {
-    if (!videoRef.current) return
-    videoRef.current.playbackRate = playbackRate
+    playbackRateRef.current = playbackRate
+    if (videoRef.current) {
+      videoRef.current.playbackRate = playbackRate
+    }
   }, [playbackRate])
 
   useEffect(() => {
-    if (!videoRef.current || !currentItem) return
+    const videoEl = videoRef.current
+    const item = currentItem
 
-    const el = videoRef.current
-    el.pause()
-    el.load()
+    if (!videoEl) return
+
+    if (!item) {
+      setTsUnsupported(false)
+      setIsPlaying(false)
+      const player = mpegtsPlayerRef.current
+      if (player) {
+        player.detachMediaElement()
+        player.destroy()
+        mpegtsPlayerRef.current = null
+      }
+      return
+    }
+
     setIsPlaying(false)
-    el.onloadedmetadata = () => {
-      el.playbackRate = playbackRate
-      void el.play().catch(() => {
-        /* ignore auto-play errors */
+
+    const isTsStream = isTransportStreamSource(item)
+
+    if (isTsStream) {
+      const player = mpegtsPlayerRef.current
+      if (player) {
+        player.detachMediaElement()
+        player.destroy()
+        mpegtsPlayerRef.current = null
+      }
+
+      if (!mpegts.isSupported()) {
+        setTsUnsupported(true)
+        videoEl.pause()
+        videoEl.removeAttribute("src")
+        videoEl.load()
+        return
+      }
+
+      setTsUnsupported(false)
+
+      videoEl.pause()
+      videoEl.removeAttribute("src")
+      videoEl.load()
+
+      const nextPlayer = mpegts.createPlayer(
+        {
+          type: "mpegts",
+          isLive: false,
+          url: item.src,
+        },
+        {
+          enableWorker: true,
+          lazyLoadMaxDuration: 3 * 60,
+          deferLoadAfterSourceOpen: true,
+        },
+      )
+
+      mpegtsPlayerRef.current = nextPlayer
+      nextPlayer.attachMediaElement(videoEl)
+      nextPlayer.load()
+      videoEl.playbackRate = playbackRateRef.current
+      const playbackAttempt = nextPlayer.play()
+      if (playbackAttempt instanceof Promise) {
+        playbackAttempt.catch(() => {
+          /* autoplay may fail; user must click play */
+        })
+      }
+
+      return () => {
+        nextPlayer.detachMediaElement()
+        nextPlayer.destroy()
+        if (mpegtsPlayerRef.current === nextPlayer) {
+          mpegtsPlayerRef.current = null
+        }
+      }
+    }
+
+    setTsUnsupported(false)
+
+    if (mpegtsPlayerRef.current) {
+      mpegtsPlayerRef.current.detachMediaElement()
+      mpegtsPlayerRef.current.destroy()
+      mpegtsPlayerRef.current = null
+    }
+
+    const handleLoadedMetadata = () => {
+      videoEl.playbackRate = playbackRateRef.current
+      void videoEl.play().catch(() => {
+        /* autoplay may fail; user must click play */
       })
     }
-  }, [currentItem, playbackRate])
+
+    videoEl.pause()
+    videoEl.load()
+    videoEl.onloadedmetadata = handleLoadedMetadata
+
+    return () => {
+      videoEl.onloadedmetadata = null
+    }
+  }, [currentItem])
 
   const handleAddItems = useCallback(
     (items: VideoItem[]) => {
@@ -145,8 +253,9 @@ export function VideoPlayer() {
 
   const addFilesToPlaylist = useCallback(
     (files: FileList | File[]) => {
-      const videoFiles = Array.from(files).filter((file) =>
-        file.type.startsWith("video/"),
+      const videoFiles = Array.from(files).filter(
+        (file) =>
+          file.type.startsWith("video/") || TRANSPORT_STREAM_REGEX.test(file.name),
       )
       if (!videoFiles.length) {
         return
@@ -256,6 +365,40 @@ export function VideoPlayer() {
     setIsPlaying(false)
   }, [currentId, playlist])
 
+  const isCurrentTransportStream = isTransportStreamSource(currentItem)
+
+  const handleDragOver = useCallback<React.DragEventHandler<HTMLDivElement>>(
+    (event) => {
+      event.preventDefault()
+      event.dataTransfer.dropEffect = "copy"
+      setIsDragActive(true)
+    },
+    [],
+  )
+
+  const handleDragLeave = useCallback<React.DragEventHandler<HTMLDivElement>>(
+    (event) => {
+      event.preventDefault()
+      const nextTarget = event.relatedTarget as Node | null
+      if (!nextTarget || !event.currentTarget.contains(nextTarget)) {
+        setIsDragActive(false)
+      }
+    },
+    [],
+  )
+
+  const handleDrop = useCallback<React.DragEventHandler<HTMLDivElement>>(
+    (event) => {
+      event.preventDefault()
+      setIsDragActive(false)
+      const files = event.dataTransfer?.files
+      if (files?.length) {
+        addFilesToPlaylist(files)
+      }
+    },
+    [addFilesToPlaylist],
+  )
+
   return (
     <div className="mx-auto flex h-full max-w-6xl flex-col gap-6 p-6">
       <header className="flex flex-col gap-1">
@@ -275,7 +418,7 @@ export function VideoPlayer() {
               ref={fileInputRef}
               type="file"
               className="hidden"
-              accept="video/*"
+              accept="video/*,.ts,.m2ts,.mts"
               multiple
               onChange={handleFileChange}
             />
@@ -283,7 +426,7 @@ export function VideoPlayer() {
               ref={folderInputRef}
               type="file"
               className="hidden"
-              accept="video/*"
+              accept="video/*,.ts,.m2ts,.mts"
               multiple
               // @ts-expect-error - 非标准属性用于选择文件夹
               webkitdirectory="true"
@@ -361,12 +504,20 @@ export function VideoPlayer() {
         <CardContent className="flex flex-1 flex-col gap-6 overflow-hidden py-6">
           <div className="grid flex-1 gap-6 lg:grid-cols-[2fr,1fr]">
             <div className="flex flex-1 flex-col gap-4">
-              <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-border bg-muted">
+              <div
+                className={cn(
+                  "relative aspect-video w-full overflow-hidden rounded-lg border border-border bg-muted transition-colors",
+                  isDragActive && "border-primary/60 bg-primary/5",
+                )}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
                 {currentItem ? (
                   <video
                     key={currentItem.id}
                     ref={videoRef}
-                    src={currentItem.src}
+                    src={isCurrentTransportStream ? undefined : currentItem.src}
                     controls
                     playsInline
                     className="h-full w-full bg-black object-contain"
@@ -380,6 +531,21 @@ export function VideoPlayer() {
                     选择或导入一个视频开始播放
                   </div>
                 )}
+                {isDragActive ? (
+                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-background/70 backdrop-blur-sm">
+                    <span className="rounded-md border border-dashed border-primary/60 bg-background/90 px-4 py-2 text-sm font-medium text-primary">
+                      松开鼠标以导入视频
+                    </span>
+                  </div>
+                ) : null}
+                {tsUnsupported ? (
+                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+                    <div className="max-w-sm rounded-md border border-destructive/40 bg-background/95 px-5 py-4 text-center text-sm text-destructive">
+                      当前浏览器不支持直接播放 MPEG-TS 视频，请转换为 MP4/HLS 或更换支持
+                      MediaSource 的浏览器。
+                    </div>
+                  </div>
+                ) : null}
               </div>
               <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border bg-muted/40 p-4">
                 <div>
@@ -391,6 +557,11 @@ export function VideoPlayer() {
                       {currentItem.relativePath}
                     </p>
                   ) : null}
+                  {tsUnsupported ? (
+                    <p className="text-xs text-destructive">
+                      未检测到 MediaSource 支持，无法播放 TS 格式。
+                    </p>
+                  ) : null}
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -398,7 +569,7 @@ export function VideoPlayer() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    disabled={!currentItem || !videoRef.current}
+                    disabled={!currentItem || !videoRef.current || tsUnsupported}
                     onClick={() => {
                       if (!videoRef.current) return
                       if (videoRef.current.paused || videoRef.current.ended) {

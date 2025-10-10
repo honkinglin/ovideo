@@ -26,7 +26,7 @@ export function PlaylistPanel({ playlist, currentId, onSelect, messages }: Playl
         </div>
         <span className="text-xs text-muted-foreground">{totalLabel}</span>
       </div>
-      <ScrollArea className="h-full">
+      <ScrollArea className="h-full max-h-[500px] lg:max-h-[430px]">
         <div className="flex flex-col p-2">
           {playlist.length ? (
             playlist.map((item, index) => {

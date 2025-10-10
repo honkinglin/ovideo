@@ -52,6 +52,10 @@ type PreferencesMessages = {
     toDark: string
     toLight: string
   }
+  languageToggle: {
+    toZh: string
+    toEn: string
+  }
   languageOptions: Record<Language, string>
 }
 
@@ -122,6 +126,10 @@ const translations: Record<Language, VideoPlayerMessages> = {
         toDark: "切换到夜间模式",
         toLight: "切换到日间模式",
       },
+      languageToggle: {
+        toZh: "切换为中文",
+        toEn: "Switch to English",
+      },
       languageOptions: {
         zh: "中文",
         en: "英文",
@@ -181,6 +189,10 @@ const translations: Record<Language, VideoPlayerMessages> = {
       themeToggle: {
         toDark: "Switch to dark mode",
         toLight: "Switch to light mode",
+      },
+      languageToggle: {
+        toZh: "Switch to Chinese",
+        toEn: "切换为英文",
       },
       languageOptions: {
         zh: "Chinese",

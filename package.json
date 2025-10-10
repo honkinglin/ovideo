@@ -2,6 +2,7 @@
   "name": "ovideo",
   "private": true,
   "version": "1.0.0",
+  "author": "kyrie",
   "description": "在线视频播放器，支持本地/远程播放列表与倍速控制",
   "type": "module",
   "scripts": {

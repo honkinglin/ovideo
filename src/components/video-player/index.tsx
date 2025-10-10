@@ -1,14 +1,7 @@
-import { type ChangeEventHandler, useCallback, useMemo, useRef } from "react"
+import { type ChangeEventHandler, useCallback, useRef } from "react"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Languages, Moon, Sun } from "lucide-react"
 
 import { MediaToolbar } from "./controls-toolbar"
@@ -24,26 +17,22 @@ import { useUrlDialog } from "./hooks/use-url-dialog"
 import { useDragAndDrop } from "./hooks/use-drag-drop"
 import { useClearDialog } from "./hooks/use-clear-dialog"
 import { usePreferences } from "./hooks/use-preferences"
-import type { Language } from "./i18n"
+import { Logo } from "./logo"
 
 export function VideoPlayer() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const folderInputRef = useRef<HTMLInputElement | null>(null)
 
-  const { language, setLanguage, toggleTheme, theme, messages } = usePreferences()
-
-  const languageOptions = useMemo(
-    () => [
-      { value: "zh" as Language, label: messages.preferences.languageOptions.zh },
-      { value: "en" as Language, label: messages.preferences.languageOptions.en },
-    ],
-    [messages],
-  )
+  const { language, toggleLanguage, toggleTheme, theme, messages } = usePreferences()
 
   const themeToggleLabel = theme === "dark"
     ? messages.preferences.themeToggle.toLight
     : messages.preferences.themeToggle.toDark
+
+  const languageToggleLabel = language === "zh"
+    ? messages.preferences.languageToggle.toEn
+    : messages.preferences.languageToggle.toZh
 
   const {
     playlist,
@@ -141,30 +130,31 @@ export function VideoPlayer() {
 
   return (
     <div className="mx-auto flex h-full max-w-6xl flex-col gap-6 p-6">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-semibold tracking-tight">{messages.app.title}</h1>
-          <p className="text-sm text-muted-foreground">{messages.app.subtitle}</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-2">
-            <Languages className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-            <Select
-              value={language}
-              onValueChange={(value) => setLanguage(value as Language)}
-            >
-              <SelectTrigger className="w-[140px]" aria-label={messages.preferences.languageLabel}>
-                <SelectValue placeholder={messages.preferences.languageLabel} />
-              </SelectTrigger>
-              <SelectContent>
-                {languageOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <Logo className="border-none bg-transparent px-0 py-0 shadow-none" />
+          <div className="space-y-1">
+            <h1 className="text-3xl font-semibold tracking-tight">{messages.app.title}</h1>
+            <p className="text-sm text-muted-foreground">{messages.app.subtitle}</p>
           </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={toggleLanguage}
+            aria-label={languageToggleLabel}
+            title={languageToggleLabel}
+          >
+            <span className="relative flex h-full w-full items-center justify-center">
+              <Languages className="h-4 w-4" />
+              <span className="absolute -bottom-1 right-1 rounded-full bg-primary px-1 text-[9px] font-semibold text-primary-foreground">
+                {language === "zh" ? "中" : "EN"}
+              </span>
+              <span className="sr-only">{languageToggleLabel}</span>
+            </span>
+          </Button>
           <Button
             type="button"
             variant="outline"
@@ -173,11 +163,7 @@ export function VideoPlayer() {
             aria-label={themeToggleLabel}
             title={themeToggleLabel}
           >
-            {theme === "dark" ? (
-              <Sun className="h-4 w-4" />
-            ) : (
-              <Moon className="h-4 w-4" />
-            )}
+            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
         </div>
       </header>

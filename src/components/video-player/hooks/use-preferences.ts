@@ -42,11 +42,15 @@ export function usePreferences() {
     setTheme((prev) => (prev === "dark" ? "light" : "dark"))
   }, [])
 
+  const toggleLanguage = useCallback(() => {
+    setLanguage((prev) => (prev === "zh" ? "en" : "zh"))
+  }, [])
+
   const messages = useMemo(() => getMessages(language), [language])
 
   return {
     language,
-    setLanguage,
+    toggleLanguage,
     theme,
     setTheme,
     toggleTheme,

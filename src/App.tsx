@@ -1,6 +1,4 @@
 import { VideoPlayer } from "@/components/video-player"
-import { PWAInstallPrompt } from "@/components/pwa-install-prompt"
-import { PWAUpdatePrompt } from "@/components/pwa-update-prompt"
 import { BgCanvas } from "@/components/bg-canvas"
 
 export default function App() {
@@ -9,8 +7,6 @@ export default function App() {
       <BgCanvas />
       <div className="relative z-10">
         <VideoPlayer />
-        <PWAInstallPrompt />
-        <PWAUpdatePrompt />
       </div>
     </div>
   )

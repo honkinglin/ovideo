@@ -14,16 +14,19 @@ export type AddFilesOptions = {
 
 // Manages playlist state, including lazy object URL creation for local files.
 export function useVideoPlaylist() {
+  // State for playlist, current video, and object URLs
   const [playlist, setPlaylist] = useState<VideoItem[]>([])
   const [currentId, setCurrentId] = useState<string | null>(null)
   const objectUrlsRef = useRef(new Map<string, string>())
 
+  // Get current playing item
   const currentItem = useMemo(
     () => playlist.find((item) => item.id === currentId) ?? null,
     [playlist, currentId],
   )
 
   // Revoke any generated object URLs when the component unmounts.
+  // Cleanup object URLs on unmount
   useEffect(() => {
     return () => {
       objectUrlsRef.current.forEach((url) => {
@@ -34,6 +37,7 @@ export function useVideoPlaylist() {
   }, [])
 
   // Auto-select the first entry whenever the playlist becomes non-empty.
+  // Auto-select first video when playlist is not empty
   useEffect(() => {
     if (!playlist.length) {
       if (currentId !== null) {
@@ -47,6 +51,7 @@ export function useVideoPlaylist() {
   }, [playlist, currentId])
 
   // Locate or create a playable source for the provided playlist entry.
+  // Get playable source URL for a playlist item
   const resolveItemSource = useCallback((item: VideoItem) => {
     if (item.source === "remote") {
       return item.src
@@ -68,6 +73,7 @@ export function useVideoPlaylist() {
   }, [])
 
   // Append local files to the playlist, optionally sorting folder imports by name.
+  // Add local video files to playlist
   const addLocalFiles = useCallback(
     (files: FileList | File[], options?: AddFilesOptions) => {
       const videoFiles = Array.from(files).filter(
@@ -100,6 +106,7 @@ export function useVideoPlaylist() {
   )
 
   // Normalise a remote URL and append it to the playlist.
+  // Add remote video URL to playlist
   const addRemoteSource = useCallback((normalizedUrl: string) => {
     const id = crypto.randomUUID()
     const item: VideoItem = {
@@ -113,11 +120,13 @@ export function useVideoPlaylist() {
     return item
   }, [])
 
+  // Select a video by ID
   const selectVideo = useCallback((id: string) => {
     setCurrentId(id)
   }, [])
 
   // Remove every playlist entry and release any object URLs.
+  // Clear all videos from playlist and release object URLs
   const clearPlaylist = useCallback(() => {
     objectUrlsRef.current.forEach((url) => {
       URL.revokeObjectURL(url)
@@ -128,6 +137,7 @@ export function useVideoPlaylist() {
   }, [])
 
   // Advance playback to the next playlist entry when available.
+  // Advance to next video in playlist
   const playNext = useCallback(() => {
     setCurrentId((prevId) => {
       if (!prevId) return prevId

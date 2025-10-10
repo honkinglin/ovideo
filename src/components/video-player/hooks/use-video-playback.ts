@@ -21,6 +21,7 @@ export function useVideoPlayback({
   currentItem,
   resolveItemSource,
 }: UseVideoPlaybackParams) {
+  // Playback rate, playing state, .ts support, and refs for video/mpegts
   const [playbackRate, setPlaybackRate] = useState(1)
   const [isPlaying, setIsPlaying] = useState(false)
   const [tsUnsupported, setTsUnsupported] = useState(false)
@@ -28,6 +29,7 @@ export function useVideoPlayback({
   const mpegtsPlayerRef = useRef<ReturnType<MpegtsModule["createPlayer"]> | null>(null)
 
   // Ensure only one mpegts player instance is ever attached to the video element.
+  // Detach and destroy mpegts.js player instance
   const detachPlayer = useCallback(() => {
     const player = mpegtsPlayerRef.current
     if (player) {
@@ -37,6 +39,7 @@ export function useVideoPlayback({
     }
   }, [])
 
+  // Sync playback rate to video element
   useEffect(() => {
     playbackRateRef.current = playbackRate
     const video = videoRef.current
@@ -45,17 +48,20 @@ export function useVideoPlayback({
     }
   }, [playbackRate, videoRef])
 
+  // Cleanup mpegts player on unmount
   useEffect(() => {
     return () => {
       detachPlayer()
     }
   }, [detachPlayer])
 
+  // Handle video source changes, attach mpegts if needed, and manage playback
   useEffect(() => {
     const videoEl = videoRef.current
     const item = currentItem
     let isActive = true
 
+    // Reset video element state
     const resetVideoElement = () => {
       if (!videoEl) return
       videoEl.pause()
@@ -101,6 +107,7 @@ export function useVideoPlayback({
 
       setTsUnsupported(false)
 
+      // Create and attach mpegts.js player
       const player = mpegts.createPlayer(
         {
           type: "mpegts",
@@ -152,6 +159,7 @@ export function useVideoPlayback({
       }
     }
 
+    // Handle metadata loaded for native video
     const handleLoadedMetadata = () => {
       videoEl.playbackRate = playbackRateRef.current
       const playbackAttempt = videoEl.play()
@@ -175,6 +183,7 @@ export function useVideoPlayback({
     }
   }, [currentItem, resolveItemSource, detachPlayer, videoRef])
 
+  // Stop video playback
   const stopPlayback = useCallback(() => {
     setIsPlaying(false)
     const video = videoRef.current
@@ -183,6 +192,7 @@ export function useVideoPlayback({
     }
   }, [videoRef])
 
+  // Toggle play/pause for video
   const handleTogglePlayback = useCallback(() => {
     const video = videoRef.current
     if (!video || tsUnsupported) return
@@ -193,14 +203,17 @@ export function useVideoPlayback({
     }
   }, [tsUnsupported, videoRef])
 
+  // Set playing state to true
   const handleVideoPlay = useCallback(() => {
     setIsPlaying(true)
   }, [])
 
+  // Set playing state to false
   const handleVideoPause = useCallback(() => {
     setIsPlaying(false)
   }, [])
 
+  // Whether playback controls are enabled
   const canControlPlayback = useMemo(
     () => Boolean(currentItem && !tsUnsupported),
     [currentItem, tsUnsupported],

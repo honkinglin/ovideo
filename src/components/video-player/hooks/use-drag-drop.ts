@@ -7,14 +7,17 @@ type UseDragAndDropOptions = {
 
 // Exposes drag-and-drop helpers for piping dropped files into the playlist hook.
 export function useDragAndDrop({ onFiles }: UseDragAndDropOptions) {
+  // State to track if drag is active (for UI feedback)
   const [isDragActive, setIsDragActive] = useState(false)
 
+  // Handle drag over event, show active state
   const handleDragOver = useCallback<DragEventHandler<HTMLDivElement>>((event) => {
     event.preventDefault()
     event.dataTransfer.dropEffect = "copy"
     setIsDragActive(true)
   }, [])
 
+  // Handle drag leave event, reset active state
   const handleDragLeave = useCallback<DragEventHandler<HTMLDivElement>>(
     (event) => {
       event.preventDefault()
@@ -26,6 +29,7 @@ export function useDragAndDrop({ onFiles }: UseDragAndDropOptions) {
     [],
   )
 
+  // Handle drop event, pass files to callback
   const handleDrop = useCallback<DragEventHandler<HTMLDivElement>>(
     (event) => {
       event.preventDefault()

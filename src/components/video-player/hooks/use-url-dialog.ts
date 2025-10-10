@@ -11,10 +11,12 @@ type UseUrlDialogOptions = {
 
 // Handles URL input validation before delegating to the playlist append logic.
 export function useUrlDialog({ onSubmit, errors }: UseUrlDialogOptions) {
+  // State for dialog open, input value, and error
   const [isOpen, setIsOpen] = useState(false)
   const [value, setValue] = useState("")
   const [error, setError] = useState<string | null>(null)
 
+  // Handle dialog open/close
   const handleOpenChange = useCallback((open: boolean) => {
     setIsOpen(open)
     if (!open) {
@@ -22,16 +24,19 @@ export function useUrlDialog({ onSubmit, errors }: UseUrlDialogOptions) {
     }
   }, [])
 
+  // Handle input value change
   const handleValueChange = useCallback((next: string) => {
     setValue(next)
     setError(null)
   }, [])
 
+  // Cancel and close dialog
   const handleCancel = useCallback(() => {
     setIsOpen(false)
     setError(null)
   }, [])
 
+  // Validate and submit URL
   const handleConfirm = useCallback(() => {
     const trimmed = value.trim()
     if (!trimmed) {

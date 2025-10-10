@@ -20,49 +20,58 @@ import { usePreferences } from "./hooks/use-preferences"
 import { Logo } from "./logo"
 
 export function VideoPlayer() {
+  // Ref for the main video element
   const videoRef = useRef<HTMLVideoElement | null>(null)
+  // Ref for file input (local files)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+  // Ref for folder input (local folders)
   const folderInputRef = useRef<HTMLInputElement | null>(null)
 
+  // Get language, theme, and related toggles/messages from preferences
   const { language, toggleLanguage, toggleTheme, theme, messages } = usePreferences()
 
+  // Label for theme toggle button
   const themeToggleLabel = theme === "dark"
     ? messages.preferences.themeToggle.toLight
     : messages.preferences.themeToggle.toDark
 
+  // Label for language toggle button
   const languageToggleLabel = language === "zh"
     ? messages.preferences.languageToggle.toEn
     : messages.preferences.languageToggle.toZh
 
+  // Playlist management and video selection logic
   const {
-    playlist,
-    currentId,
-    currentItem,
-    hasPlaylist,
-    addLocalFiles,
-    addRemoteSource,
-    selectVideo,
-    clearPlaylist,
-    playNext,
-    resolveItemSource,
+    playlist,         // List of video items
+    currentId,        // Current playing video ID
+    currentItem,      // Current playing video item
+    hasPlaylist,      // Whether playlist has items
+    addLocalFiles,    // Add local files to playlist
+    addRemoteSource,  // Add remote video source
+    selectVideo,      // Select video by ID
+    clearPlaylist,    // Clear all videos from playlist
+    playNext,         // Play next video in playlist
+    resolveItemSource // Resolve video source URL
   } = useVideoPlaylist()
 
+  // Playback control logic for the video element
   const {
-    playbackRate,
-    setPlaybackRate,
-    isPlaying,
-    tsUnsupported,
-    canControlPlayback,
-    handleTogglePlayback,
-    handleVideoPlay,
-    handleVideoPause,
-    stopPlayback,
+    playbackRate,         // Current playback rate
+    setPlaybackRate,      // Change playback rate
+    isPlaying,            // Is video playing
+    tsUnsupported,        // Is .ts format unsupported
+    canControlPlayback,   // Can control playback
+    handleTogglePlayback, // Toggle play/pause
+    handleVideoPlay,      // Handle play event
+    handleVideoPause,     // Handle pause event
+    stopPlayback          // Stop playback
   } = useVideoPlayback({
     videoRef,
     currentItem,
     resolveItemSource,
   })
 
+  // Add files to playlist and stop current playback
   const addFilesAndStop = useCallback(
     (files: FileList | File[], options?: AddFilesOptions) => {
       const added = addLocalFiles(files, options)
@@ -73,6 +82,7 @@ export function VideoPlayer() {
     [addLocalFiles, stopPlayback],
   )
 
+  // Dialog logic for adding remote video URLs
   const urlDialog = useUrlDialog({
     errors: messages.urlErrors,
     onSubmit: (normalized) => {
@@ -85,6 +95,7 @@ export function VideoPlayer() {
     },
   })
 
+  // Dialog logic for clearing the playlist
   const clearDialog = useClearDialog({
     hasPlaylist,
     onConfirm: () => {
@@ -93,10 +104,12 @@ export function VideoPlayer() {
     },
   })
 
+  // Drag and drop logic for adding files
   const { isDragActive, handleDragOver, handleDragLeave, handleDrop } = useDragAndDrop({
     onFiles: (files) => addFilesAndStop(files),
   })
 
+  // Handle file input change (local files)
   const handleFileChange = useCallback<ChangeEventHandler<HTMLInputElement>>(
     (event) => {
       if (!event.target.files?.length) return
@@ -106,6 +119,7 @@ export function VideoPlayer() {
     [addFilesAndStop],
   )
 
+  // Handle folder input change (local folders)
   const handleFolderChange = useCallback<ChangeEventHandler<HTMLInputElement>>(
     (event) => {
       if (!event.target.files?.length) return
@@ -115,6 +129,7 @@ export function VideoPlayer() {
     [addFilesAndStop],
   )
 
+  // Select a video from the playlist and stop current playback
   const handleSelectVideo = useCallback(
     (id: string) => {
       selectVideo(id)
@@ -123,6 +138,7 @@ export function VideoPlayer() {
     [selectVideo, stopPlayback],
   )
 
+  // When video ends, play next video and stop playback
   const handleVideoEnded = useCallback(() => {
     playNext()
     stopPlayback()

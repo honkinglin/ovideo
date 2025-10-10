@@ -23,29 +23,35 @@ function readStoredTheme(): ThemeMode {
 
 // Stores language & theme preferences, mirroring them to document-level attributes.
 export function usePreferences() {
+  // State for language and theme
   const [language, setLanguage] = useState<Language>(() => readStoredLanguage())
   const [theme, setTheme] = useState<ThemeMode>(() => readStoredTheme())
 
+  // Sync language to <html> and localStorage
   useEffect(() => {
     if (typeof document === "undefined") return
     document.documentElement.lang = language === "zh" ? "zh-CN" : "en"
     window.localStorage.setItem(LANGUAGE_STORAGE_KEY, language)
   }, [language])
 
+  // Sync theme to <html> and localStorage
   useEffect(() => {
     if (typeof document === "undefined") return
     document.documentElement.classList.toggle("dark", theme === "dark")
     window.localStorage.setItem(THEME_STORAGE_KEY, theme)
   }, [theme])
 
+  // Toggle between dark and light theme
   const toggleTheme = useCallback(() => {
     setTheme((prev) => (prev === "dark" ? "light" : "dark"))
   }, [])
 
+  // Toggle between Chinese and English
   const toggleLanguage = useCallback(() => {
     setLanguage((prev) => (prev === "zh" ? "en" : "zh"))
   }, [])
 
+  // Get i18n messages for current language
   const messages = useMemo(() => getMessages(language), [language])
 
   return {

@@ -1,24 +1,51 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/logo.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>在线视频播放器</title>
+
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#6366f1" />
+    <meta
+      name="description"
+      content="A feature-rich online video player with playlist management and playback controls"
+    />
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- Apple Touch Icon -->
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Ovideo" />
+
+    <!-- Microsoft Tiles -->
+    <meta name="msapplication-TileImage" content="/icons/icon-144x144.png" />
+    <meta name="msapplication-TileColor" content="#6366f1" />
+
+    <!-- Additional Meta Tags -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="Ovideo" />
+
+    <title>Ovideo - Modern Web Video Player</title>
     <script>
       (() => {
-        const themeKey = "ovideo.preferences.theme"
-        const storedTheme = localStorage.getItem(themeKey)
-        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
-        const theme = storedTheme === "dark" || (storedTheme === null && prefersDark)
-          ? "dark"
-          : "light"
-        document.documentElement.classList.toggle("dark", theme === "dark")
+        const themeKey = "ovideo.preferences.theme";
+        const storedTheme = localStorage.getItem(themeKey);
+        const prefersDark = window.matchMedia(
+          "(prefers-color-scheme: dark)"
+        ).matches;
+        const theme =
+          storedTheme === "dark" || (storedTheme === null && prefersDark)
+            ? "dark"
+            : "light";
+        document.documentElement.classList.toggle("dark", theme === "dark");
 
-        const languageKey = "ovideo.preferences.language"
-        const storedLanguage = localStorage.getItem(languageKey)
-        document.documentElement.lang = storedLanguage === "en" ? "en" : "zh-CN"
-      })()
+        const languageKey = "ovideo.preferences.language";
+        const storedLanguage = localStorage.getItem(languageKey);
+        document.documentElement.lang =
+          storedLanguage === "en" ? "en" : "zh-CN";
+      })();
     </script>
   </head>
   <body class="min-h-screen bg-background text-foreground">

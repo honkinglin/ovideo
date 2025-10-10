@@ -9,6 +9,7 @@
     <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React">
     <img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite">
     <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS">
+    <img src="https://img.shields.io/badge/PWA-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white" alt="PWA">
   </p>
 </div>
 
@@ -29,12 +30,14 @@
 - **📱 Responsive Design** - Optimized for desktop and mobile devices
 - **🎪 Drag & Drop** - Intuitive file dropping interface
 - **🔄 Modern UI** - Built with shadcn/ui and Radix Primitives
+- **📲 PWA Support** - Installable as a native app with offline capabilities
 
 ### 🛠️ Technical Highlights
 - **🚀 Modern Stack** - Built with Vite, React 19, TypeScript
 - **🎨 Beautiful UI** - Tailwind CSS with shadcn/ui components
 - **📺 Video Streaming** - Support for various formats including MPEG-TS via mpegts.js
 - **♿ Accessibility** - ARIA-compliant with keyboard navigation support
+- **📱 Progressive Web App** - Installable with Service Worker caching and offline support
 
 ## 🚀 Getting Started
 
@@ -63,6 +66,26 @@
 
 4. **Open your browser**
    Navigate to `http://localhost:5173`
+
+## 📱 PWA Features
+
+Ovideo is a Progressive Web App (PWA) that can be installed on your device for a native app-like experience:
+
+### Installation
+- **Desktop**: Look for the install prompt in the address bar or the install button in the app
+- **Mobile**: Use "Add to Home Screen" option in your browser menu
+- **Automatic Updates**: The app will prompt you when updates are available
+- **Brand Consistency**: Uses the project logo for all PWA icons across different platforms
+
+### Offline Capabilities
+- **Service Worker Caching**: Static assets are cached for offline access
+- **Font Caching**: Google Fonts are cached for consistent typography
+- **Background Updates**: App updates in the background when connected
+
+### Cross-Platform Support
+- **Desktop**: Windows, macOS, Linux (Chrome, Edge, Firefox)
+- **Mobile**: iOS (Safari), Android (Chrome, Samsung Internet)
+- **Responsive**: Adapts to different screen sizes and orientations
 
 ## 🔧 Development
 
@@ -106,6 +129,7 @@ src/
 - **Video Processing**: mpegts.js for MPEG-TS support
 - **Icons**: Lucide React
 - **State Management**: React Hooks (useState, useReducer)
+- **PWA**: Vite PWA Plugin with Workbox for Service Worker and caching
 
 ## 🚀 Deployment
 

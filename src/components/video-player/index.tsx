@@ -71,34 +71,30 @@ export function VideoPlayer() {
     resolveItemSource,
   })
 
-  // Add files to playlist without stopping playback (will auto-play if first video)
+  // Add files to playlist and auto-play the first new video
   const addFilesAndStop = useCallback(
     (files: FileList | File[], options?: AddFilesOptions) => {
-      const wasEmpty = playlist.length === 0
       const added = addLocalFiles(files, options)
       if (added.length) {
-        // Only stop playback if we already had videos, otherwise let auto-play happen
-        if (!wasEmpty) {
-          stopPlayback()
-        }
+        // Always switch to the first newly added video
+        selectVideo(added[0].id)
+        stopPlayback()
       }
     },
-    [addLocalFiles, stopPlayback, playlist.length],
+    [addLocalFiles, selectVideo, stopPlayback],
   )
 
   // Dialog logic for adding remote video URLs
   const urlDialog = useUrlDialog({
     errors: messages.urlErrors,
     onSubmit: (normalized) => {
-      const wasEmpty = playlist.length === 0
       const item = addRemoteSource(normalized)
       if (!item) {
         return false
       }
-      // Only stop playback if we already had videos, otherwise let auto-play happen
-      if (!wasEmpty) {
-        stopPlayback()
-      }
+      // Always switch to the newly added remote video
+      selectVideo(item.id)
+      stopPlayback()
       return true
     },
   })
@@ -141,13 +137,13 @@ export function VideoPlayer() {
     [addFilesAndStop],
   )
 
-  // Select a video from the playlist and stop current playback
+  // Select a video from the playlist and switch to it
   const handleSelectVideo = useCallback(
     (id: string) => {
       selectVideo(id)
-      stopPlayback()
+      // Don't stop playback, let the video switch naturally
     },
-    [selectVideo, stopPlayback],
+    [selectVideo],
   )
 
   // When video ends, play next video and stop playback

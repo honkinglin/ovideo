@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react"
 
-export function TechBgCanvas() {
+export function BgCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -35,16 +35,16 @@ export function TechBgCanvas() {
       })
     }
 
-    // Theme color
-    const isDark = document.documentElement.classList.contains("dark")
-    const bgColor = isDark ? "#10101a" : "#f6f8fa"
-    const particleColor = isDark ? "#6366f1" : "#8b5cf6"
-    const lineColor = isDark ? "rgba(99,102,241,0.10)" : "rgba(139,92,246,0.10)" // 更淡
-
     // Animation loop
     let animationId: number
     function animate() {
       if (!ctx) return
+      // 每帧都获取当前主题色
+      const isDark = document.documentElement.classList.contains("dark")
+      const bgColor = isDark ? "#10101a" : "#f6f8fa"
+      const particleColor = isDark ? "#6366f1" : "#8b5cf6"
+      const lineColor = isDark ? "rgba(99,102,241,0.10)" : "rgba(139,92,246,0.10)" // 更淡
+
       ctx.clearRect(0, 0, width, height)
       ctx.globalAlpha = 0.7 // canvas整体更透明
       ctx.fillStyle = bgColor

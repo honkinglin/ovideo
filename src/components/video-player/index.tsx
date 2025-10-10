@@ -168,7 +168,7 @@ export function VideoPlayer() {
         </div>
       </header>
 
-      <Card className="flex flex-1 flex-col">
+      <Card className="flex flex-1 flex-col shadow-[0_8px_32px_0_rgba(99,102,241,0.18)] z-10">
         <CardHeader className="border-b border-border pb-4">
           <CardTitle className="text-xl font-semibold">
             {messages.app.controlPanelTitle}

@@ -1,6 +1,5 @@
 import {
   type ChangeEventHandler,
-  type MutableRefObject,
   useEffect,
   useRef,
 } from "react"
@@ -22,8 +21,8 @@ import { Label } from "@/components/ui/label"
 import type { VideoPlayerMessages } from "./i18n"
 
 type MediaToolbarProps = {
-  fileInputRef: MutableRefObject<HTMLInputElement | null>
-  folderInputRef: MutableRefObject<HTMLInputElement | null>
+  fileInputRef: React.RefObject<HTMLInputElement | null>
+  folderInputRef: React.RefObject<HTMLInputElement | null>
   isUrlDialogOpen: boolean
   hasPlaylist: boolean
   urlValue: string

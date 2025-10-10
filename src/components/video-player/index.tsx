@@ -15,6 +15,7 @@ import { PlaybackInfo } from "./playback-info"
 import { PlayerSurface } from "./player-surface"
 import { PlaylistPanel } from "./playlist-panel"
 import {
+  comparePlaylistItems,
   getFileLabel,
   getNameFromUrl,
   isTransportStreamFile,
@@ -37,6 +38,7 @@ export function VideoPlayer() {
   const [isPlaying, setIsPlaying] = useState(false)
   const [isDragActive, setIsDragActive] = useState(false)
   const [tsUnsupported, setTsUnsupported] = useState(false)
+  const [isClearDialogOpen, setIsClearDialogOpen] = useState(false)
 
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -44,6 +46,16 @@ export function VideoPlayer() {
   const objectUrlsRef = useRef(new Map<string, string>())
   const mpegtsPlayerRef = useRef<ReturnType<MpegtsModule["createPlayer"]> | null>(null)
   const playbackRateRef = useRef(playbackRate)
+
+  const ensureLocalObjectUrl = useCallback((item: VideoItem) => {
+    if (item.source !== "local") return undefined
+    const existing = objectUrlsRef.current.get(item.id)
+    if (existing) return existing
+    if (!item.file) return undefined
+    const objectUrl = URL.createObjectURL(item.file)
+    objectUrlsRef.current.set(item.id, objectUrl)
+    return objectUrl
+  }, [])
 
   const currentItem = useMemo(
     () => playlist.find((item) => item.id === currentId) ?? null,
@@ -66,6 +78,7 @@ export function VideoPlayer() {
     }
     if (!playlist.length) {
       setCurrentId(null)
+      setIsClearDialogOpen(false)
     }
   }, [playlist, currentId])
 
@@ -90,6 +103,14 @@ export function VideoPlayer() {
       }
     }
 
+    const resetVideoElement = () => {
+      if (!videoEl) return
+      videoEl.pause()
+      videoEl.removeAttribute("src")
+      videoEl.load()
+      videoEl.onloadedmetadata = null
+    }
+
     if (!videoEl) {
       return
     }
@@ -98,6 +119,7 @@ export function VideoPlayer() {
       setTsUnsupported(false)
       setIsPlaying(false)
       detachPlayer()
+      resetVideoElement()
       return
     }
 
@@ -107,10 +129,17 @@ export function VideoPlayer() {
 
     if (isTsStream) {
       detachPlayer()
+      resetVideoElement()
 
-      videoEl.pause()
-      videoEl.removeAttribute("src")
-      videoEl.load()
+      const sourceUrl =
+        item.source === "local" ? ensureLocalObjectUrl(item) : item.src
+
+      if (!sourceUrl) {
+        setTsUnsupported(true)
+        return () => {
+          isActive = false
+        }
+      }
 
       if (!mpegts.isSupported()) {
         setTsUnsupported(true)
@@ -125,7 +154,7 @@ export function VideoPlayer() {
         {
           type: "mpegts",
           isLive: false,
-          url: item.src,
+          url: sourceUrl,
         },
         {
           enableWorker: true,
@@ -163,6 +192,16 @@ export function VideoPlayer() {
     setTsUnsupported(false)
     detachPlayer()
 
+    const sourceUrl =
+      item.source === "local" ? ensureLocalObjectUrl(item) : item.src
+
+    if (!sourceUrl) {
+      resetVideoElement()
+      return () => {
+        isActive = false
+      }
+    }
+
     const handleLoadedMetadata = () => {
       videoEl.playbackRate = playbackRateRef.current
       const playbackAttempt = videoEl.play()
@@ -174,6 +213,9 @@ export function VideoPlayer() {
     }
 
     videoEl.pause()
+    if (videoEl.src !== sourceUrl) {
+      videoEl.src = sourceUrl
+    }
     videoEl.load()
     videoEl.onloadedmetadata = handleLoadedMetadata
 
@@ -181,7 +223,7 @@ export function VideoPlayer() {
       isActive = false
       videoEl.onloadedmetadata = null
     }
-  }, [currentItem])
+  }, [currentItem, ensureLocalObjectUrl])
 
   const handleAddItems = useCallback(
     (items: VideoItem[]) => {
@@ -213,27 +255,18 @@ export function VideoPlayer() {
 
       const newItems: VideoItem[] = videoFiles.map((file) => {
         const id = crypto.randomUUID()
-        const objectUrl = URL.createObjectURL(file)
-        objectUrlsRef.current.set(id, objectUrl)
         return {
           id,
           name: file.name,
-          src: objectUrl,
           source: "local" as const,
           relativePath: getFileLabel(file),
+          file,
         }
       })
 
       const sortedItems =
         options?.sortMode === "alphabetical"
-          ? [...newItems].sort((a, b) => {
-              const textA = a.relativePath ?? a.name
-              const textB = b.relativePath ?? b.name
-              return (
-                textA.localeCompare(textB, "zh-Hans-CN") ||
-                textA.localeCompare(textB)
-              )
-            })
+          ? [...newItems].sort(comparePlaylistItems)
           : newItems
 
       handleAddItems(sortedItems)
@@ -379,6 +412,26 @@ export function VideoPlayer() {
     setUrlError(null)
   }, [])
 
+  const handleClearDialogOpenChange = useCallback(
+    (open: boolean) => {
+      if (open && !playlist.length) {
+        setIsClearDialogOpen(false)
+        return
+      }
+      setIsClearDialogOpen(open)
+    },
+    [playlist],
+  )
+
+  const handleConfirmClearPlaylist = useCallback(() => {
+    handleClearPlaylist()
+    setIsClearDialogOpen(false)
+  }, [handleClearPlaylist])
+
+  const handleCancelClearPlaylist = useCallback(() => {
+    setIsClearDialogOpen(false)
+  }, [])
+
   const handleTogglePlayback = useCallback(() => {
     const video = videoRef.current
     if (!video || tsUnsupported) return
@@ -393,7 +446,6 @@ export function VideoPlayer() {
     setPlaybackRate(rate)
   }, [])
 
-  const isCurrentTransportStream = isTransportStreamSource(currentItem)
   const canControlPlayback = Boolean(currentItem && videoRef.current && !tsUnsupported)
 
   return (
@@ -421,7 +473,10 @@ export function VideoPlayer() {
             onUrlCancel={handleCancelUrl}
             onFileInputChange={handleFileChange}
             onFolderInputChange={handleFolderChange}
-            onClearPlaylist={handleClearPlaylist}
+            isClearDialogOpen={isClearDialogOpen}
+            onClearDialogOpenChange={handleClearDialogOpenChange}
+            onConfirmClearPlaylist={handleConfirmClearPlaylist}
+            onCancelClearPlaylist={handleCancelClearPlaylist}
           />
         </CardHeader>
 
@@ -431,7 +486,6 @@ export function VideoPlayer() {
               <PlayerSurface
                 currentItem={currentItem}
                 videoRef={videoRef}
-                isCurrentTransportStream={isCurrentTransportStream}
                 isDragActive={isDragActive}
                 tsUnsupported={tsUnsupported}
                 onDragOver={handleDragOver}

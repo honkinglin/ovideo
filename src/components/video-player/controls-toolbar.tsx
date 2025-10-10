@@ -1,4 +1,9 @@
-import type { ChangeEventHandler, MutableRefObject } from "react"
+import {
+  type ChangeEventHandler,
+  type MutableRefObject,
+  useEffect,
+  useRef,
+} from "react"
 import { FileVideo, FolderOpen, Link2, Trash2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -27,7 +32,10 @@ type MediaToolbarProps = {
   onUrlCancel: () => void
   onFileInputChange: ChangeEventHandler<HTMLInputElement>
   onFolderInputChange: ChangeEventHandler<HTMLInputElement>
-  onClearPlaylist: () => void
+  isClearDialogOpen: boolean
+  onClearDialogOpenChange: (open: boolean) => void
+  onConfirmClearPlaylist: () => void
+  onCancelClearPlaylist: () => void
 }
 
 export function MediaToolbar({
@@ -43,8 +51,28 @@ export function MediaToolbar({
   onUrlCancel,
   onFileInputChange,
   onFolderInputChange,
-  onClearPlaylist,
+  isClearDialogOpen,
+  onClearDialogOpenChange,
+  onConfirmClearPlaylist,
+  onCancelClearPlaylist,
 }: MediaToolbarProps) {
+  const clearContainerRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (!isClearDialogOpen) return
+    const handlePointerDown = (event: MouseEvent) => {
+      const container = clearContainerRef.current
+      if (!container) return
+      if (!container.contains(event.target as Node)) {
+        onCancelClearPlaylist()
+      }
+    }
+    document.addEventListener("mousedown", handlePointerDown)
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown)
+    }
+  }, [isClearDialogOpen, onCancelClearPlaylist])
+
   return (
     <div className="flex flex-wrap items-center gap-2 pt-4">
       <input
@@ -108,10 +136,43 @@ export function MediaToolbar({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <Button variant="ghost" onClick={onClearPlaylist} disabled={!hasPlaylist}>
-        <Trash2 className="mr-2 h-4 w-4" />
-        清空列表
-      </Button>
+      <div className="relative" ref={clearContainerRef}>
+        <Button
+          variant="ghost"
+          disabled={!hasPlaylist}
+          onClick={() => onClearDialogOpenChange(!isClearDialogOpen)}
+        >
+          <Trash2 className="mr-2 h-4 w-4" />
+          清空列表
+        </Button>
+        {isClearDialogOpen ? (
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            className="absolute left-0 top-full z-40 mt-2 w-64 rounded-md border border-border bg-background p-4 shadow-lg"
+          >
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold">确认清空播放列表？</h3>
+              <p className="text-xs text-muted-foreground">
+                此操作将移除所有已添加的视频资源，且本地文件的临时链接会被释放。
+              </p>
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <Button type="button" variant="ghost" size="sm" onClick={onCancelClearPlaylist}>
+                取消
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={onConfirmClearPlaylist}
+              >
+                确认清空
+              </Button>
+            </div>
+          </div>
+        ) : null}
+      </div>
     </div>
   )
 }

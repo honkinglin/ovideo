@@ -8,7 +8,6 @@ import type { VideoItem } from "./types"
 type PlayerSurfaceProps = {
   currentItem: VideoItem | null
   videoRef: MutableRefObject<HTMLVideoElement | null>
-  isCurrentTransportStream: boolean
   isDragActive: boolean
   tsUnsupported: boolean
   onDragOver: React.DragEventHandler<HTMLDivElement>
@@ -22,7 +21,6 @@ type PlayerSurfaceProps = {
 export function PlayerSurface({
   currentItem,
   videoRef,
-  isCurrentTransportStream,
   isDragActive,
   tsUnsupported,
   onDragOver,
@@ -46,7 +44,6 @@ export function PlayerSurface({
         <video
           key={currentItem.id}
           ref={videoRef}
-          src={isCurrentTransportStream ? undefined : currentItem.src}
           controls
           playsInline
           className="h-full w-full bg-black object-contain"

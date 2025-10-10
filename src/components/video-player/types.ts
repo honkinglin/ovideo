@@ -3,9 +3,10 @@ export type VideoSource = "local" | "remote"
 export type VideoItem = {
   id: string
   name: string
-  src: string
   source: VideoSource
   relativePath?: string
+  src?: string
+  file?: File
 }
 
 export type MpegtsMediaDataSource = {

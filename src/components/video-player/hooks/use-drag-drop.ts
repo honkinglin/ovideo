@@ -5,6 +5,28 @@ type UseDragAndDropOptions = {
   onFiles: (files: FileList | File[]) => void
 }
 
+// Helper function to recursively get files from a directory entry
+async function getFilesFromEntry(entry: FileSystemEntry): Promise<File[]> {
+  if (entry.isFile) {
+    return new Promise<File[]>((resolve) => {
+      (entry as FileSystemFileEntry).file((file) => resolve([file]))
+    })
+  } else if (entry.isDirectory) {
+    const dirReader = (entry as FileSystemDirectoryEntry).createReader()
+    const entries = await new Promise<FileSystemEntry[]>((resolve) => {
+      dirReader.readEntries(resolve)
+    })
+    
+    const allFiles: File[] = []
+    for (const childEntry of entries) {
+      const files = await getFilesFromEntry(childEntry)
+      allFiles.push(...files)
+    }
+    return allFiles
+  }
+  return []
+}
+
 // Exposes drag-and-drop helpers for piping dropped files into the playlist hook.
 export function useDragAndDrop({ onFiles }: UseDragAndDropOptions) {
   // State to track if drag is active (for UI feedback)
@@ -31,12 +53,34 @@ export function useDragAndDrop({ onFiles }: UseDragAndDropOptions) {
 
   // Handle drop event, pass files to callback
   const handleDrop = useCallback<DragEventHandler<HTMLDivElement>>(
-    (event) => {
+    async (event) => {
       event.preventDefault()
       setIsDragActive(false)
-      const files = event.dataTransfer?.files
-      if (files?.length) {
-        onFiles(files)
+      
+      // Check if we have DataTransferItemList for folder support
+      if (event.dataTransfer?.items) {
+        const allFiles: File[] = []
+        
+        // Process each dropped item
+        for (const item of Array.from(event.dataTransfer.items)) {
+          if (item.kind === 'file') {
+            const entry = item.webkitGetAsEntry()
+            if (entry) {
+              const files = await getFilesFromEntry(entry)
+              allFiles.push(...files)
+            }
+          }
+        }
+        
+        if (allFiles.length) {
+          onFiles(allFiles)
+        }
+      } else {
+        // Fallback to regular file handling
+        const files = event.dataTransfer?.files
+        if (files?.length) {
+          onFiles(files)
+        }
       }
     },
     [onFiles],

@@ -106,7 +106,11 @@ export function VideoPlayer() {
 
   // Drag and drop logic for adding files
   const { isDragActive, handleDragOver, handleDragLeave, handleDrop } = useDragAndDrop({
-    onFiles: (files) => addFilesAndStop(files),
+    onFiles: (files) => {
+      // Check if dropped files contain folders (multiple files suggest folder drop)
+      const isFromFolder = files.length > 1
+      addFilesAndStop(files, isFromFolder ? { sortMode: "alphabetical" } : undefined)
+    },
   })
 
   // Handle file input change (local files)

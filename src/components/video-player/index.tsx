@@ -21,7 +21,7 @@ import { Logo } from "./logo"
 
 export function VideoPlayer() {
   // Ref for the main video element
-  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
   // Ref for file input (local files)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   // Ref for folder input (local folders)

@@ -1,4 +1,4 @@
-import type { MutableRefObject } from "react"
+import type { RefObject } from "react"
 import { ListVideo } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -8,7 +8,7 @@ import type { VideoPlayerMessages } from "./i18n"
 
 type PlayerSurfaceProps = {
   currentItem: VideoItem | null
-  videoRef: MutableRefObject<HTMLVideoElement | null>
+  videoRef: RefObject<HTMLVideoElement | null>
   isDragActive: boolean
   tsUnsupported: boolean
   onDragOver: React.DragEventHandler<HTMLDivElement>

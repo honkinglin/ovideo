@@ -71,26 +71,34 @@ export function VideoPlayer() {
     resolveItemSource,
   })
 
-  // Add files to playlist and stop current playback
+  // Add files to playlist without stopping playback (will auto-play if first video)
   const addFilesAndStop = useCallback(
     (files: FileList | File[], options?: AddFilesOptions) => {
+      const wasEmpty = playlist.length === 0
       const added = addLocalFiles(files, options)
       if (added.length) {
-        stopPlayback()
+        // Only stop playback if we already had videos, otherwise let auto-play happen
+        if (!wasEmpty) {
+          stopPlayback()
+        }
       }
     },
-    [addLocalFiles, stopPlayback],
+    [addLocalFiles, stopPlayback, playlist.length],
   )
 
   // Dialog logic for adding remote video URLs
   const urlDialog = useUrlDialog({
     errors: messages.urlErrors,
     onSubmit: (normalized) => {
+      const wasEmpty = playlist.length === 0
       const item = addRemoteSource(normalized)
       if (!item) {
         return false
       }
-      stopPlayback()
+      // Only stop playback if we already had videos, otherwise let auto-play happen
+      if (!wasEmpty) {
+        stopPlayback()
+      }
       return true
     },
   })
@@ -149,12 +157,12 @@ export function VideoPlayer() {
   }, [playNext, stopPlayback])
 
   return (
-    <div className="mx-auto flex h-full max-w-6xl flex-col gap-6 p-6">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex h-screen w-full flex-col gap-4 p-4 lg:p-6">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
           <Logo className="border-none bg-transparent px-0 py-0 shadow-none" />
           <div className="space-y-1">
-            <h1 className="text-3xl font-semibold tracking-tight">{messages.app.title}</h1>
+            <h1 className="text-2xl lg:text-3xl font-semibold tracking-tight">{messages.app.title}</h1>
             <p className="text-sm text-muted-foreground">{messages.app.subtitle}</p>
           </div>
         </div>
@@ -206,8 +214,8 @@ export function VideoPlayer() {
         </div>
       </header>
 
-      <Card className="flex flex-1 flex-col shadow-[0_8px_32px_0_rgba(99,102,241,0.18)] z-10">
-        <CardHeader className="border-b border-border pb-4">
+      <Card className="flex flex-1 flex-col shadow-[0_8px_32px_0_rgba(99,102,241,0.18)] z-10 min-h-0">
+        <CardHeader className="border-b border-border pb-4 flex-shrink-0">
           <CardTitle className="text-xl font-semibold">
             {messages.app.controlPanelTitle}
           </CardTitle>
@@ -232,9 +240,9 @@ export function VideoPlayer() {
           />
         </CardHeader>
 
-        <CardContent className="flex flex-1 flex-col gap-6 overflow-hidden py-6">
-          <div className="grid flex-1 gap-6 lg:grid-cols-[2fr,1fr]">
-            <div className="flex flex-1 flex-col gap-4">
+        <CardContent className="flex flex-1 flex-col gap-4 overflow-hidden py-4 min-h-0">
+          <div className="grid flex-1 gap-4 lg:grid-cols-[3fr,1fr] xl:grid-cols-[3.5fr,1fr] 2xl:grid-cols-[4fr,1fr] min-h-0">
+            <div className="flex flex-1 flex-col gap-3 min-h-0">
               <PlayerSurface
                 currentItem={currentItem}
                 videoRef={videoRef}

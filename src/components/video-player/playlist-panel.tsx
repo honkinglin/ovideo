@@ -26,7 +26,7 @@ export function PlaylistPanel({ playlist, currentId, onSelect, messages }: Playl
         </div>
         <span className="text-xs text-muted-foreground">{totalLabel}</span>
       </div>
-      <ScrollArea className="h-full max-h-[500px] lg:max-h-[430px]">
+      <ScrollArea className="flex-1">
         <div className="flex flex-col p-2">
           {playlist.length ? (
             playlist.map((item, index) => {
@@ -37,24 +37,25 @@ export function PlaylistPanel({ playlist, currentId, onSelect, messages }: Playl
                     type="button"
                     onClick={() => onSelect(item.id)}
                     className={cn(
-                      "flex w-full flex-col items-start gap-1 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                      "flex w-full flex-col items-start gap-1 rounded-md px-3 py-3 text-left text-sm transition-colors hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                       isActive && "bg-primary/10 text-primary",
                     )}
+                    title={item.name} // Add tooltip for full name
                   >
-                    <span className="flex items-center gap-2 font-medium">
+                    <div className="flex items-start gap-2 w-full">
                       {isActive ? (
-                        <PlayCircle className="h-4 w-4 flex-none" />
+                        <PlayCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
                       ) : (
-                        <ListVideo className="h-4 w-4 flex-none opacity-60" />
+                        <ListVideo className="h-4 w-4 flex-shrink-0 opacity-60 mt-0.5" />
                       )}
-                      {item.name}
-                    </span>
+                      <span className="font-medium leading-tight break-words">{item.name}</span>
+                    </div>
                     {item.relativePath ? (
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-xs text-muted-foreground ml-6 leading-tight break-words">
                         {item.relativePath}
                       </span>
                     ) : (
-                      <span className="text-xs text-muted-foreground capitalize">
+                      <span className="text-xs text-muted-foreground ml-6 capitalize">
                         {item.source === "local"
                           ? messages.localSource
                           : messages.remoteSource}

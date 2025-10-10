@@ -46,10 +46,11 @@ export function PlayerSurface({
   return (
     <div
       className={cn(
-        "relative aspect-video w-full overflow-hidden rounded-lg border border-dashed border-border bg-muted transition-colors cursor-pointer",
+        "relative flex-1 w-full overflow-hidden rounded-lg border border-dashed border-border bg-muted transition-colors cursor-pointer",
         isDragActive && "border-primary/60 bg-primary/5",
         !currentItem && "hover:border-primary/60"
       )}
+      style={{ aspectRatio: currentItem ? 'auto' : '16/9' }}
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={onDrop}

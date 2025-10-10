@@ -4,6 +4,7 @@ import { ListVideo } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 import type { VideoItem } from "./types"
+import type { VideoPlayerMessages } from "./i18n"
 
 type PlayerSurfaceProps = {
   currentItem: VideoItem | null
@@ -16,6 +17,7 @@ type PlayerSurfaceProps = {
   onVideoEnded: () => void
   onVideoPlay: () => void
   onVideoPause: () => void
+  messages: VideoPlayerMessages["playerSurface"]
 }
 
 export function PlayerSurface({
@@ -29,6 +31,7 @@ export function PlayerSurface({
   onVideoEnded,
   onVideoPlay,
   onVideoPause,
+  messages,
 }: PlayerSurfaceProps) {
   return (
     <div
@@ -54,21 +57,20 @@ export function PlayerSurface({
       ) : (
         <div className="flex h-full flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
           <ListVideo className="h-8 w-8" />
-          选择或导入一个视频开始播放
+          {messages.idlePrompt}
         </div>
       )}
       {isDragActive ? (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-background/70 backdrop-blur-sm">
           <span className="rounded-md border border-dashed border-primary/60 bg-background/90 px-4 py-2 text-sm font-medium text-primary">
-            松开鼠标以导入视频
+            {messages.dragOverlay}
           </span>
         </div>
       ) : null}
       {tsUnsupported ? (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
           <div className="max-w-sm rounded-md border border-destructive/40 bg-background/95 px-5 py-4 text-center text-sm text-destructive">
-            当前浏览器不支持直接播放 MPEG-TS 视频，请转换为 MP4/HLS 或更换支持 MediaSource
-            的浏览器。
+            {messages.tsUnsupported}
           </div>
         </div>
       ) : null}

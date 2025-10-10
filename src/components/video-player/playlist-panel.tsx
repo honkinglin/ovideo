@@ -5,22 +5,26 @@ import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 
 import type { VideoItem } from "./types"
+import type { VideoPlayerMessages } from "./i18n"
 
 type PlaylistPanelProps = {
   playlist: VideoItem[]
   currentId: string | null
   onSelect: (id: string) => void
+  messages: VideoPlayerMessages["playlist"]
 }
 
-export function PlaylistPanel({ playlist, currentId, onSelect }: PlaylistPanelProps) {
+export function PlaylistPanel({ playlist, currentId, onSelect, messages }: PlaylistPanelProps) {
+  const totalLabel = messages.countLabel.replace("{count}", String(playlist.length))
+
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-lg border border-border">
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <div className="flex items-center gap-2">
           <ListVideo className="h-4 w-4" />
-          <span className="text-sm font-semibold">播放列表</span>
+          <span className="text-sm font-semibold">{messages.title}</span>
         </div>
-        <span className="text-xs text-muted-foreground">{playlist.length} 个视频</span>
+        <span className="text-xs text-muted-foreground">{totalLabel}</span>
       </div>
       <ScrollArea className="h-full">
         <div className="flex flex-col p-2">
@@ -51,7 +55,9 @@ export function PlaylistPanel({ playlist, currentId, onSelect }: PlaylistPanelPr
                       </span>
                     ) : (
                       <span className="text-xs text-muted-foreground capitalize">
-                        {item.source === "local" ? "本地文件" : "在线视频"}
+                        {item.source === "local"
+                          ? messages.localSource
+                          : messages.remoteSource}
                       </span>
                     )}
                   </button>
@@ -64,7 +70,7 @@ export function PlaylistPanel({ playlist, currentId, onSelect }: PlaylistPanelPr
           ) : (
             <div className="flex flex-col items-center justify-center gap-2 px-4 py-6 text-center text-sm text-muted-foreground">
               <ListVideo className="h-8 w-8" />
-              <p>播放列表为空，添加本地文件或在线视频即可开始。</p>
+              <p>{messages.empty}</p>
             </div>
           )}
         </div>

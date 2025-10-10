@@ -19,6 +19,8 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
+import type { VideoPlayerMessages } from "./i18n"
+
 type MediaToolbarProps = {
   fileInputRef: MutableRefObject<HTMLInputElement | null>
   folderInputRef: MutableRefObject<HTMLInputElement | null>
@@ -36,6 +38,7 @@ type MediaToolbarProps = {
   onClearDialogOpenChange: (open: boolean) => void
   onConfirmClearPlaylist: () => void
   onCancelClearPlaylist: () => void
+  messages: VideoPlayerMessages["toolbar"]
 }
 
 export function MediaToolbar({
@@ -55,6 +58,7 @@ export function MediaToolbar({
   onClearDialogOpenChange,
   onConfirmClearPlaylist,
   onCancelClearPlaylist,
+  messages,
 }: MediaToolbarProps) {
   const clearContainerRef = useRef<HTMLDivElement | null>(null)
 
@@ -96,31 +100,29 @@ export function MediaToolbar({
 
       <Button onClick={() => fileInputRef.current?.click()}>
         <FileVideo className="mr-2 h-4 w-4" />
-        打开视频
+        {messages.openVideo}
       </Button>
       <Button variant="secondary" onClick={() => folderInputRef.current?.click()}>
         <FolderOpen className="mr-2 h-4 w-4" />
-        导入文件夹
+        {messages.importFolder}
       </Button>
       <Dialog open={isUrlDialogOpen} onOpenChange={onUrlDialogOpenChange}>
         <DialogTrigger asChild>
           <Button variant="outline">
             <Link2 className="mr-2 h-4 w-4" />
-            添加链接
+            {messages.addLink}
           </Button>
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>添加视频链接</DialogTitle>
-            <DialogDescription>
-              支持 http 或 https 协议的视频文件地址。
-            </DialogDescription>
+            <DialogTitle>{messages.linkDialogTitle}</DialogTitle>
+            <DialogDescription>{messages.linkDialogDescription}</DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            <Label htmlFor="video-url">视频地址</Label>
+            <Label htmlFor="video-url">{messages.linkInputLabel}</Label>
             <Input
               id="video-url"
-              placeholder="https://example.com/video.mp4"
+              placeholder={messages.linkPlaceholder}
               value={urlValue}
               onChange={(event) => onUrlValueChange(event.target.value)}
             />
@@ -128,10 +130,10 @@ export function MediaToolbar({
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
             <Button type="button" variant="ghost" onClick={onUrlCancel}>
-              取消
+              {messages.cancel}
             </Button>
             <Button type="button" onClick={onUrlConfirm}>
-              确认添加
+              {messages.confirm}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -143,23 +145,24 @@ export function MediaToolbar({
           onClick={() => onClearDialogOpenChange(!isClearDialogOpen)}
         >
           <Trash2 className="mr-2 h-4 w-4" />
-          清空列表
+          {messages.clearList}
         </Button>
         {isClearDialogOpen ? (
           <div
             role="alertdialog"
             aria-modal="true"
+            aria-label={messages.clearConfirmTitle}
             className="absolute left-0 top-full z-40 mt-2 w-64 rounded-md border border-border bg-background p-4 shadow-lg"
           >
             <div className="space-y-2">
-              <h3 className="text-sm font-semibold">确认清空播放列表？</h3>
+              <h3 className="text-sm font-semibold">{messages.clearConfirmTitle}</h3>
               <p className="text-xs text-muted-foreground">
-                此操作将移除所有已添加的视频资源，且本地文件的临时链接会被释放。
+                {messages.clearConfirmDescription}
               </p>
             </div>
             <div className="mt-4 flex justify-end gap-2">
               <Button type="button" variant="ghost" size="sm" onClick={onCancelClearPlaylist}>
-                取消
+                {messages.cancel}
               </Button>
               <Button
                 type="button"
@@ -167,7 +170,7 @@ export function MediaToolbar({
                 size="sm"
                 onClick={onConfirmClearPlaylist}
               >
-                确认清空
+                {messages.confirm}
               </Button>
             </div>
           </div>

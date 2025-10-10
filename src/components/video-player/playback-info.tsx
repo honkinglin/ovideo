@@ -10,6 +10,7 @@ import { PauseCircle, PlayCircle } from "lucide-react"
 
 import { PLAYBACK_SPEEDS } from "./utils"
 import type { VideoItem } from "./types"
+import type { VideoPlayerMessages } from "./i18n"
 
 type PlaybackInfoProps = {
   currentItem: VideoItem | null
@@ -19,6 +20,7 @@ type PlaybackInfoProps = {
   canControlPlayback: boolean
   onTogglePlayback: () => void
   onChangePlaybackRate: (rate: number) => void
+  messages: VideoPlayerMessages["playback"]
 }
 
 export function PlaybackInfo({
@@ -29,20 +31,19 @@ export function PlaybackInfo({
   canControlPlayback,
   onTogglePlayback,
   onChangePlaybackRate,
+  messages,
 }: PlaybackInfoProps) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border bg-muted/40 p-4">
       <div>
         <p className="text-sm font-medium">
-          {currentItem ? currentItem.name : "当前未选择视频"}
+          {currentItem ? currentItem.name : messages.noSelection}
         </p>
         {currentItem?.relativePath ? (
           <p className="text-xs text-muted-foreground">{currentItem.relativePath}</p>
         ) : null}
         {tsUnsupported ? (
-          <p className="text-xs text-destructive">
-            未检测到 MediaSource 支持，无法播放 TS 格式。
-          </p>
+          <p className="text-xs text-destructive">{messages.tsUnsupported}</p>
         ) : null}
       </div>
 
@@ -57,24 +58,24 @@ export function PlaybackInfo({
           {isPlaying ? (
             <>
               <PauseCircle className="mr-1.5 h-4 w-4" />
-              暂停
+              {messages.pause}
             </>
           ) : (
             <>
               <PlayCircle className="mr-1.5 h-4 w-4" />
-              播放
+              {messages.play}
             </>
           )}
         </Button>
 
         <div className="flex items-center gap-2 text-sm">
-          <span className="text-muted-foreground">倍速</span>
+          <span className="text-muted-foreground">{messages.speedLabel}</span>
           <Select
             value={String(playbackRate)}
             onValueChange={(value) => onChangePlaybackRate(Number.parseFloat(value))}
           >
             <SelectTrigger className="w-[110px]">
-              <SelectValue placeholder="选择倍速" />
+              <SelectValue placeholder={messages.speedLabel} />
             </SelectTrigger>
             <SelectContent>
               {PLAYBACK_SPEEDS.map((speed) => (

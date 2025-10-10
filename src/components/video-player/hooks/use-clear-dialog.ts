@@ -5,6 +5,7 @@ type UseClearDialogOptions = {
   onConfirm: () => void
 }
 
+// Provides open/close helpers for the inline clear-playlist confirmation panel.
 export function useClearDialog({ hasPlaylist, onConfirm }: UseClearDialogOptions) {
   const [isOpen, setIsOpen] = useState(false)
 

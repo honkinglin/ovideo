@@ -4,6 +4,7 @@ import { isTransportStreamSource } from "../utils"
 import type { MpegtsModule, VideoItem } from "../types"
 import rawMpegtsModule from "mpegts.js"
 
+// mpegts.js is bundled eagerly so subsequent instantiations are cheap.
 const mpegts = (
   (rawMpegtsModule as { default?: unknown }).default ?? rawMpegtsModule
 ) as MpegtsModule
@@ -14,6 +15,7 @@ type UseVideoPlaybackParams = {
   resolveItemSource: (item: VideoItem) => string | undefined
 }
 
+// Coordinates native HTMLVideoElement playback with an optional mpegts.js instance.
 export function useVideoPlayback({
   videoRef,
   currentItem,
@@ -25,6 +27,7 @@ export function useVideoPlayback({
   const playbackRateRef = useRef(playbackRate)
   const mpegtsPlayerRef = useRef<ReturnType<MpegtsModule["createPlayer"]> | null>(null)
 
+  // Ensure only one mpegts player instance is ever attached to the video element.
   const detachPlayer = useCallback(() => {
     const player = mpegtsPlayerRef.current
     if (player) {

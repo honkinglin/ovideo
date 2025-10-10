@@ -12,6 +12,7 @@ export type AddFilesOptions = {
   sortMode?: "alphabetical"
 }
 
+// Manages playlist state, including lazy object URL creation for local files.
 export function useVideoPlaylist() {
   const [playlist, setPlaylist] = useState<VideoItem[]>([])
   const [currentId, setCurrentId] = useState<string | null>(null)
@@ -22,6 +23,7 @@ export function useVideoPlaylist() {
     [playlist, currentId],
   )
 
+  // Revoke any generated object URLs when the component unmounts.
   useEffect(() => {
     return () => {
       objectUrlsRef.current.forEach((url) => {
@@ -31,6 +33,7 @@ export function useVideoPlaylist() {
     }
   }, [])
 
+  // Auto-select the first entry whenever the playlist becomes non-empty.
   useEffect(() => {
     if (!playlist.length) {
       if (currentId !== null) {
@@ -43,6 +46,7 @@ export function useVideoPlaylist() {
     }
   }, [playlist, currentId])
 
+  // Locate or create a playable source for the provided playlist entry.
   const resolveItemSource = useCallback((item: VideoItem) => {
     if (item.source === "remote") {
       return item.src
@@ -63,6 +67,7 @@ export function useVideoPlaylist() {
     return objectUrl
   }, [])
 
+  // Append local files to the playlist, optionally sorting folder imports by name.
   const addLocalFiles = useCallback(
     (files: FileList | File[], options?: AddFilesOptions) => {
       const videoFiles = Array.from(files).filter(
@@ -94,6 +99,7 @@ export function useVideoPlaylist() {
     [],
   )
 
+  // Normalise a remote URL and append it to the playlist.
   const addRemoteSource = useCallback((normalizedUrl: string) => {
     const id = crypto.randomUUID()
     const item: VideoItem = {
@@ -111,6 +117,7 @@ export function useVideoPlaylist() {
     setCurrentId(id)
   }, [])
 
+  // Remove every playlist entry and release any object URLs.
   const clearPlaylist = useCallback(() => {
     objectUrlsRef.current.forEach((url) => {
       URL.revokeObjectURL(url)
@@ -120,6 +127,7 @@ export function useVideoPlaylist() {
     setCurrentId(null)
   }, [])
 
+  // Advance playback to the next playlist entry when available.
   const playNext = useCallback(() => {
     setCurrentId((prevId) => {
       if (!prevId) return prevId

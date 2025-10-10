@@ -5,6 +5,7 @@ type UseDragAndDropOptions = {
   onFiles: (files: FileList | File[]) => void
 }
 
+// Exposes drag-and-drop helpers for piping dropped files into the playlist hook.
 export function useDragAndDrop({ onFiles }: UseDragAndDropOptions) {
   const [isDragActive, setIsDragActive] = useState(false)
 

@@ -2,9 +2,15 @@ import { useCallback, useState } from "react"
 
 type UseUrlDialogOptions = {
   onSubmit: (normalizedUrl: string) => boolean
+  errors: {
+    empty: string
+    protocol: string
+    invalid: string
+  }
 }
 
-export function useUrlDialog({ onSubmit }: UseUrlDialogOptions) {
+// Handles URL input validation before delegating to the playlist append logic.
+export function useUrlDialog({ onSubmit, errors }: UseUrlDialogOptions) {
   const [isOpen, setIsOpen] = useState(false)
   const [value, setValue] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -29,21 +35,21 @@ export function useUrlDialog({ onSubmit }: UseUrlDialogOptions) {
   const handleConfirm = useCallback(() => {
     const trimmed = value.trim()
     if (!trimmed) {
-      setError("请输入视频链接")
+      setError(errors.empty)
       return
     }
     if (!/^https?:\/\//i.test(trimmed)) {
-      setError("仅支持 http 或 https 协议")
+      setError(errors.protocol)
       return
     }
     if (/\s/.test(trimmed)) {
-      setError("请输入有效的视频链接")
+      setError(errors.invalid)
       return
     }
 
     const hostSegment = trimmed.slice(trimmed.indexOf("//") + 2).split(/[/?#]/)[0]
     if (!hostSegment) {
-      setError("请输入有效的视频链接")
+      setError(errors.invalid)
       return
     }
 
@@ -56,7 +62,7 @@ export function useUrlDialog({ onSubmit }: UseUrlDialogOptions) {
     setIsOpen(false)
     setValue("")
     setError(null)
-  }, [onSubmit, value])
+  }, [errors.empty, errors.invalid, errors.protocol, onSubmit, value])
 
   return {
     isOpen,

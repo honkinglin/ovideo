@@ -33,15 +33,27 @@ export function PlayerSurface({
   onVideoPause,
   messages,
 }: PlayerSurfaceProps) {
+  // When no video, clicking the surface triggers file input
+  const handleSurfaceClick = () => {
+    if (!currentItem) {
+      const fileInput = document.querySelector('input[type="file"]:not([webkitdirectory])');
+      if (fileInput) {
+        (fileInput as HTMLInputElement).click();
+      }
+    }
+  };
+
   return (
     <div
       className={cn(
-        "relative aspect-video w-full overflow-hidden rounded-lg border border-border bg-muted transition-colors",
+        "relative aspect-video w-full overflow-hidden rounded-lg border border-dashed border-border bg-muted transition-colors cursor-pointer",
         isDragActive && "border-primary/60 bg-primary/5",
+        !currentItem && "hover:border-primary/60"
       )}
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={onDrop}
+      onClick={handleSurfaceClick}
     >
       {currentItem ? (
         <video
@@ -55,7 +67,7 @@ export function PlayerSurface({
           onPause={onVideoPause}
         />
       ) : (
-        <div className="flex h-full flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
+        <div className="flex h-full flex-col items-center justify-center gap-2 text-sm text-muted-foreground select-none">
           <ListVideo className="h-8 w-8" />
           {messages.idlePrompt}
         </div>

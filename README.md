@@ -15,6 +15,8 @@
 
 ---
 
+![dark](./docs/dark.png)
+
 ## ✨ Features
 
 ### 🎯 Core Functionality
@@ -31,13 +33,6 @@
 - **🎪 Drag & Drop** - Intuitive file dropping interface
 - **🔄 Modern UI** - Built with shadcn/ui and Radix Primitives
 - **📲 PWA Support** - Installable as a native app with offline capabilities
-
-### 🛠️ Technical Highlights
-- **🚀 Modern Stack** - Built with Vite, React 19, TypeScript
-- **🎨 Beautiful UI** - Tailwind CSS with shadcn/ui components
-- **📺 Video Streaming** - Support for various formats including MPEG-TS via mpegts.js
-- **♿ Accessibility** - ARIA-compliant with keyboard navigation support
-- **📱 Progressive Web App** - Installable with Service Worker caching and offline support
 
 ## 🚀 Getting Started
 
@@ -174,25 +169,6 @@ The built files will be in the `dist/` directory, ready for deployment to any st
 3. Run: `npm run build && npm run deploy`
 
 </details>
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-### Development Guidelines
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Code Style
-
-- Use TypeScript for type safety
-- Follow the existing code style
-- Use meaningful component and variable names
-- Add comments for complex logic
 
 ## 📄 License
 

@@ -46,16 +46,12 @@
       }
     </script>
 
-    <!-- Contact Info (for search engines) -->
-    <meta name="contact" content="contact@your-domain.com" />
-
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#6366f1" />
     <meta
       name="description"
       content="A feature-rich online video player with playlist management and playback controls"
     />
-    <link rel="manifest" href="manifest.webmanifest" />
 
     <!-- Apple Touch Icon -->
     <link rel="apple-touch-icon" href="icons/icon-192x192.png" />
@@ -74,6 +70,7 @@
     <title>Ovideo - Modern Web Video Player</title>
     <script>
       (() => {
+        try {
         const themeKey = "ovideo.preferences.theme";
         const storedTheme = localStorage.getItem(themeKey);
         const prefersDark = window.matchMedia(
@@ -89,6 +86,7 @@
         const storedLanguage = localStorage.getItem(languageKey);
         document.documentElement.lang =
           storedLanguage === "en" ? "en" : "zh-CN";
+        } catch { /* Storage may be disabled. Keep document defaults. */ }
       })();
     </script>
   </head>

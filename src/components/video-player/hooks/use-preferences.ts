@@ -7,13 +7,15 @@ const THEME_STORAGE_KEY = "ovideo.preferences.theme"
 
 function readStoredLanguage(): Language {
   if (typeof window === "undefined") return "zh"
-  const stored = window.localStorage.getItem(LANGUAGE_STORAGE_KEY)
+  let stored: string | null = null
+  try { stored = window.localStorage.getItem(LANGUAGE_STORAGE_KEY) } catch { /* Storage unavailable. */ }
   return stored === "en" ? "en" : "zh"
 }
 
 function readStoredTheme(): ThemeMode {
   if (typeof window === "undefined") return "light"
-  const stored = window.localStorage.getItem(THEME_STORAGE_KEY)
+  let stored: string | null = null
+  try { stored = window.localStorage.getItem(THEME_STORAGE_KEY) } catch { /* Storage unavailable. */ }
   if (stored === "dark" || stored === "light") {
     return stored
   }
@@ -31,14 +33,14 @@ export function usePreferences() {
   useEffect(() => {
     if (typeof document === "undefined") return
     document.documentElement.lang = language === "zh" ? "zh-CN" : "en"
-    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, language)
+    try { window.localStorage.setItem(LANGUAGE_STORAGE_KEY, language) } catch { /* Optional persistence. */ }
   }, [language])
 
   // Sync theme to <html> and localStorage
   useEffect(() => {
     if (typeof document === "undefined") return
     document.documentElement.classList.toggle("dark", theme === "dark")
-    window.localStorage.setItem(THEME_STORAGE_KEY, theme)
+    try { window.localStorage.setItem(THEME_STORAGE_KEY, theme) } catch { /* Optional persistence. */ }
   }, [theme])
 
   // Toggle between dark and light theme

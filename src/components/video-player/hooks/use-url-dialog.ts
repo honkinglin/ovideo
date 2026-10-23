@@ -52,13 +52,15 @@ export function useUrlDialog({ onSubmit, errors }: UseUrlDialogOptions) {
       return
     }
 
-    const hostSegment = trimmed.slice(trimmed.indexOf("//") + 2).split(/[/?#]/)[0]
-    if (!hostSegment) {
+    let normalized: string
+    try {
+      const url = new URL(trimmed)
+      if (!url.hostname || url.username || url.password) throw new Error("Invalid URL")
+      normalized = url.href
+    } catch {
       setError(errors.invalid)
       return
     }
-
-    const normalized = trimmed
     const submitted = onSubmit(normalized)
     if (!submitted) {
       return

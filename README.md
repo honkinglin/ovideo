@@ -38,7 +38,7 @@
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 22.13+ or 24+ (Node.js 24 recommended; run `nvm use`)
 - npm or yarn
 
 ### Installation
@@ -51,7 +51,7 @@
 
 2. **Install dependencies**
    ```bash
-   npm install
+   npm ci
    ```
 
 3. **Start development server**
@@ -69,13 +69,13 @@ Ovideo is a Progressive Web App (PWA) that can be installed on your device for a
 ### Installation
 - **Desktop**: Look for the install prompt in the address bar or the install button in the app
 - **Mobile**: Use "Add to Home Screen" option in your browser menu
-- **Automatic Updates**: The app will prompt you when updates are available
+- **Updates**: The app prompts when a new version is available; choose when to apply it.
 - **Brand Consistency**: Uses the project logo for all PWA icons across different platforms
 
 ### Offline Capabilities
-- **Service Worker Caching**: Static assets are cached for offline access
+- **Service Worker Caching**: The app shell and playback engine are cached for offline access. Remote video content is not downloaded or cached. Local videos must be selected again after reopening.
 - **Font Caching**: Google Fonts are cached for consistent typography
-- **Background Updates**: App updates in the background when connected
+- **Update Prompt**: New versions wait for you to save playback progress and update
 
 ### Cross-Platform Support
 - **Desktop**: Windows, macOS, Linux (Chrome, Edge, Firefox)
@@ -90,6 +90,9 @@ Ovideo is a Progressive Web App (PWA) that can be installed on your device for a
 - `npm run build` - Build for production
 - `npm run preview` - Preview production build
 - `npm run lint` - Run ESLint
+- `npm test` - Run import, playlist, URL, and playback regression tests
+- `npm run check` - Run lint, tests, and production build
+- `npm run test:e2e` - Run desktop/mobile Chromium playback tests after building (uses installed Chrome locally; CI installs Chromium)
 
 ### Project Structure
 
@@ -187,3 +190,36 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
   <p>Made with ❤️ by <a href="https://github.com/honkinglin">honkinglin</a></p>
   <p>⭐ Star this repository if you find it helpful!</p>
 </div>
+
+## Playback and storage notes
+
+- Online sources must be direct HTTP/HTTPS media URLs, not website pages. Playback depends on browser codecs and server access rules; HLS/DASH adapters are not included.
+- Local file progress is matched by relative path/name, size, and modification time. Select the same files again to resume; the app does not retain file access or store video bytes.
+- Remote URLs (including any query parameters) and the latest 200 progress entries are saved in browser localStorage. Clearing the playlist removes saved remote URLs; clearing site data removes all history and preferences.
+- Storage failures do not prevent playback. Videos within three seconds of the end restart from the beginning.
+- Deployment paths use `VITE_BASE` consistently for assets, manifest scope, and launch URL. For GitHub Pages use `VITE_BASE=/ovideo/ npm run build`.
+- Development service workers are disabled to avoid stale development assets. Verify offline behavior using the production preview.
+
+## Dependency maintenance
+
+The existing React 19 / Vite 7 / Tailwind 3 architecture is retained. `package-lock.json` records tested upgrades. `postcss-selector-parser` is overridden to a patched 7.x version to address GHSA-rj75-hqrm-r3gf in Tailwind 3's build chain; remove the override when upstream dependencies no longer require it. Build output and browser tests must pass after updates.
+
+## Subtitles, segment loops, and keyboard controls
+
+Open **Subtitles, segment loop & shortcuts** beneath the video controls.
+
+- Import a UTF-8 `.srt` or `.vtt` file up to 2 MB. SRT is converted locally to WebVTT. Captions use the browser's native video text track, including native fullscreen. You can hide, show, replace, or remove them. Invalid replacements preserve the previous captions.
+- Set **A** at the start of a passage, seek forward, then set **B**. B must be at least 0.5 seconds after A; setting B enables the loop. Pause the loop to seek freely, or clear the markers. A-B takes priority over playlist repeat mode.
+- Switching videos clears subtitles and A-B markers. Neither is persisted or uploaded. The playback engine may check segment boundaries on media events, so loops are not frame-accurate.
+
+| Key | Action |
+| --- | --- |
+| Space / K | Play / pause |
+| Left / Right | Seek backward / forward 5 seconds |
+| Up / Down | Adjust volume by 5% |
+| M | Toggle mute |
+| F | Enter / exit fullscreen when supported |
+| [ / ] | Set A / B |
+| Backslash | Clear the segment |
+
+App shortcuts apply when focus is outside inputs, buttons, dialogs, and native video controls. Those elements keep their own keyboard behavior; modifier keys and IME composition are ignored.

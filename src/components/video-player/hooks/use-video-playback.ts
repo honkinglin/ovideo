@@ -1,233 +1,140 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-
+import { useCallback, useEffect, useRef, useState } from "react"
 import { isTransportStreamSource } from "../utils"
+import { readStorage, writeStorage } from "../storage"
 import type { MpegtsModule, VideoItem } from "../types"
-import rawMpegtsModule from "mpegts.js"
 
-// mpegts.js is bundled eagerly so subsequent instantiations are cheap.
-const mpegts = (
-  (rawMpegtsModule as { default?: unknown }).default ?? rawMpegtsModule
-) as MpegtsModule
-
-type UseVideoPlaybackParams = {
-  videoRef: React.MutableRefObject<HTMLVideoElement | null>
-  currentItem: VideoItem | null
-  resolveItemSource: (item: VideoItem) => string | undefined
+export type PlaybackStatus = "idle" | "loading" | "playing" | "paused" | "buffering" | "ended" | "error"
+export type PlaybackError = "unsupported" | "network" | "decode" | "unknown" | null
+const SETTINGS = "ovideo.playback.v1"
+const HISTORY = "ovideo.history.v1"
+type Settings = { rate: number; volume: number; muted: boolean }
+function settings(): Settings {
+  const value = readStorage<Partial<Settings> | null>(SETTINGS, null)
+  return {
+    rate: typeof value?.rate === "number" && value.rate >= 0.25 && value.rate <= 4 ? value.rate : 1,
+    volume: typeof value?.volume === "number" && value.volume >= 0 && value.volume <= 1 ? value.volume : 1,
+    muted: value?.muted === true,
+  }
+}
+function history(): Record<string, number> {
+  const value = readStorage<unknown>(HISTORY, {})
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {}
+  return Object.fromEntries(Object.entries(value).filter(([, time]) => typeof time === "number" && Number.isFinite(time) && time >= 0))
 }
 
-// Coordinates native HTMLVideoElement playback with an optional mpegts.js instance.
-export function useVideoPlayback({
-  videoRef,
-  currentItem,
-  resolveItemSource,
-}: UseVideoPlaybackParams) {
-  // Playback rate, playing state, .ts support, and refs for video/mpegts
-  const [playbackRate, setPlaybackRate] = useState(1)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [tsUnsupported, setTsUnsupported] = useState(false)
+export function useVideoPlayback({ videoRef, currentItem, resolveItemSource }: {
+  videoRef: React.RefObject<HTMLVideoElement | null>
+  currentItem: VideoItem | null
+  resolveItemSource: (item: VideoItem) => string | undefined
+}) {
+  const [playbackRate, setPlaybackRate] = useState(() => settings().rate)
+  const [status, setStatus] = useState<PlaybackStatus>("idle")
+  const [error, setError] = useState<PlaybackError>(null)
+  const [attempt, setAttempt] = useState(0)
   const playbackRateRef = useRef(playbackRate)
-  const mpegtsPlayerRef = useRef<ReturnType<MpegtsModule["createPlayer"]> | null>(null)
-
-  // Ensure only one mpegts player instance is ever attached to the video element.
-  // Detach and destroy mpegts.js player instance
-  const detachPlayer = useCallback(() => {
-    const player = mpegtsPlayerRef.current
-    if (player) {
-      player.detachMediaElement()
-      player.destroy()
-      mpegtsPlayerRef.current = null
-    }
-  }, [])
-
-  // Sync playback rate to video element
   useEffect(() => {
     playbackRateRef.current = playbackRate
-    const video = videoRef.current
-    if (video) {
-      video.playbackRate = playbackRate
-    }
+    if (videoRef.current) videoRef.current.playbackRate = playbackRate
   }, [playbackRate, videoRef])
 
-  // Cleanup mpegts player on unmount
   useEffect(() => {
-    return () => {
-      detachPlayer()
-    }
-  }, [detachPlayer])
-
-  // Handle video source changes, attach mpegts if needed, and manage playback
-  useEffect(() => {
-    const videoEl = videoRef.current
-    const item = currentItem
-    let isActive = true
-
-    // Reset video element state
-    const resetVideoElement = () => {
-      if (!videoEl) return
-      videoEl.pause()
-      videoEl.removeAttribute("src")
-      videoEl.load()
-      videoEl.onloadedmetadata = null
-    }
-
-    if (!videoEl) {
-      return
-    }
-
-    if (!item) {
-      setTsUnsupported(false)
-      setIsPlaying(false)
-      detachPlayer()
-      resetVideoElement()
-      return
-    }
-
-    setIsPlaying(false)
-
-    const isTsStream = isTransportStreamSource(item)
-
-    if (isTsStream) {
-      detachPlayer()
-      resetVideoElement()
-
-      const sourceUrl = resolveItemSource(item)
-      if (!sourceUrl) {
-        setTsUnsupported(true)
-        return () => {
-          isActive = false
-        }
-      }
-
-      if (!mpegts.isSupported()) {
-        setTsUnsupported(true)
-        return () => {
-          isActive = false
-        }
-      }
-
-      setTsUnsupported(false)
-
-      // Create and attach mpegts.js player
-      const player = mpegts.createPlayer(
-        {
-          type: "mpegts",
-          isLive: false,
-          url: sourceUrl,
-        },
-        {
-          enableWorker: true,
-          lazyLoadMaxDuration: 3 * 60,
-          deferLoadAfterSourceOpen: true,
-        },
-      )
-      mpegtsPlayerRef.current = player
-
-      const errorEvent = mpegts.Events?.ERROR ?? "error"
-      const handlePlayerError = () => {
-        if (!isActive) return
-        detachPlayer()
-        setTsUnsupported(true)
-        setIsPlaying(false)
-      }
-      player.on?.(errorEvent, handlePlayerError)
-
-      player.attachMediaElement(videoEl)
-      player.load()
-      videoEl.playbackRate = playbackRateRef.current
-      const playbackAttempt = player.play()
-      if (playbackAttempt instanceof Promise) {
-        playbackAttempt.catch(() => {
-          /* autoplay may fail; user must click play */
-        })
-      }
-
-      return () => {
-        isActive = false
-        detachPlayer()
-      }
-    }
-
-    setTsUnsupported(false)
-    detachPlayer()
-
-    const sourceUrl = resolveItemSource(item)
-
-    if (!sourceUrl) {
-      resetVideoElement()
-      return () => {
-        isActive = false
-      }
-    }
-
-    // Handle metadata loaded for native video
-    const handleLoadedMetadata = () => {
-      videoEl.playbackRate = playbackRateRef.current
-      const playbackAttempt = videoEl.play()
-      if (playbackAttempt instanceof Promise) {
-        playbackAttempt.catch(() => {
-          /* autoplay may fail; user must click play */
-        })
-      }
-    }
-
-    videoEl.pause()
-    if (videoEl.src !== sourceUrl) {
-      videoEl.src = sourceUrl
-    }
-    videoEl.load()
-    videoEl.onloadedmetadata = handleLoadedMetadata
-
-    return () => {
-      isActive = false
-      videoEl.onloadedmetadata = null
-    }
-  }, [currentItem, resolveItemSource, detachPlayer, videoRef])
-
-  // Stop video playback
-  const stopPlayback = useCallback(() => {
-    setIsPlaying(false)
     const video = videoRef.current
-    if (video) {
-      video.pause()
+    if (!video || !currentItem) return
+    let active = true
+    let player: ReturnType<MpegtsModule["createPlayer"]> | undefined
+    let lastSave = 0
+    let metadataLoaded = false
+    const key = currentItem.identity ?? currentItem.src ?? currentItem.id
+    const fail = (reason: PlaybackError) => { if (active) { setError(reason); setStatus("error") } }
+    const saveProgress = () => {
+      if (!metadataLoaded || !Number.isFinite(video.currentTime)) return
+      const records = history()
+      delete records[key]
+      records[key] = video.ended ? 0 : video.currentTime
+      writeStorage(HISTORY, Object.fromEntries(Object.entries(records).slice(-200)))
     }
-  }, [videoRef])
+    const saveSettings = () => {
+      setPlaybackRate(video.playbackRate)
+      writeStorage(SETTINGS, { rate: video.playbackRate, volume: video.volume, muted: video.muted })
+    }
+    const play = async () => {
+      try { await video.play() } catch (reason) {
+        if (!active) return
+        if (reason instanceof DOMException && ["NotAllowedError", "AbortError"].includes(reason.name)) {
+          setStatus("paused")
+        } else fail("unknown")
+      }
+    }
+    const metadata = () => {
+      metadataLoaded = true
+      const position = history()[key]
+      if (position > 0 && Number.isFinite(video.duration) && position < video.duration - 3) video.currentTime = position
+      video.playbackRate = playbackRateRef.current
+      void play()
+    }
+    const playing = () => { if (active) { setError(null); setStatus("playing") } }
+    const pause = () => { if (active) setStatus((state) => state === "error" ? state : "paused"); saveProgress() }
+    const waiting = () => { if (active) setStatus((state) => state === "error" ? state : "buffering") }
+    const ended = () => { if (active) setStatus("ended"); saveProgress() }
+    const mediaError = () => fail(video.error?.code === 2 ? "network" : video.error?.code === 3 ? "decode" : video.error?.code === 4 ? "unsupported" : "unknown")
+    const timeUpdate = () => { if (Date.now() - lastSave > 5000) { saveProgress(); lastSave = Date.now() } }
+    const events = { loadedmetadata: metadata, playing, pause, waiting, ended, error: mediaError, timeupdate: timeUpdate, volumechange: saveSettings, ratechange: saveSettings }
+    Object.entries(events).forEach(([name, handler]) => video.addEventListener(name, handler))
+    window.addEventListener("pagehide", saveProgress)
+    const initial = settings()
+    video.playbackRate = playbackRateRef.current
+    video.volume = initial.volume
+    video.muted = initial.muted
+    setStatus("loading")
+    setError(null)
+    const start = async () => {
+      try {
+        const src = resolveItemSource(currentItem)
+        if (!src) { fail("unknown"); return }
+        if (isTransportStreamSource(currentItem)) {
+          const module = await import("mpegts.js")
+          if (!active) return
+          const mpegts = (module.default ?? module) as unknown as MpegtsModule
+          if (!mpegts.isSupported()) { fail("unsupported"); return }
+          player = mpegts.createPlayer({ type: "mpegts", isLive: false, url: src }, { enableWorker: true, lazyLoadMaxDuration: 180, deferLoadAfterSourceOpen: true })
+          player.on?.(mpegts.Events?.ERROR ?? "error", (type) => fail(type === "NetworkError" ? "network" : "decode"))
+          player.attachMediaElement(video)
+          player.load()
+        } else {
+          video.src = src
+          video.load()
+        }
+      } catch { fail("unknown") }
+    }
+    void start()
+    return () => {
+      active = false
+      saveProgress()
+      Object.entries(events).forEach(([name, handler]) => video.removeEventListener(name, handler))
+      window.removeEventListener("pagehide", saveProgress)
+      video.pause()
+      if (player) { player.detachMediaElement(); player.destroy() }
+      video.removeAttribute("src")
+      video.load()
+    }
+  }, [currentItem, resolveItemSource, videoRef, attempt])
 
-  // Toggle play/pause for video
   const handleTogglePlayback = useCallback(() => {
     const video = videoRef.current
-    if (!video || tsUnsupported) return
+    if (!video || error) return
     if (video.paused || video.ended) {
-      void video.play()
-    } else {
-      video.pause()
-    }
-  }, [tsUnsupported, videoRef])
-
-  // Set playing state to true
-  const handleVideoPlay = useCallback(() => {
-    setIsPlaying(true)
-  }, [])
-
-  // Set playing state to false
-  const handleVideoPause = useCallback(() => {
-    setIsPlaying(false)
-  }, [])
-
-  // Whether playback controls are enabled
-  const canControlPlayback = useMemo(
-    () => Boolean(currentItem && !tsUnsupported),
-    [currentItem, tsUnsupported],
-  )
-
+      video.play().catch((reason: unknown) => {
+        if (videoRef.current !== video) return
+        if (reason instanceof DOMException && ["NotAllowedError", "AbortError"].includes(reason.name)) setStatus("paused")
+        else { setError("unknown"); setStatus("error") }
+      })
+    } else video.pause()
+  }, [error, videoRef])
+  const stopPlayback = useCallback(() => { videoRef.current?.pause() }, [videoRef])
   return {
-    playbackRate,
-    setPlaybackRate,
-    isPlaying,
-    tsUnsupported,
-    canControlPlayback,
-    handleTogglePlayback,
-    handleVideoPlay,
-    handleVideoPause,
-    stopPlayback,
+    playbackRate, setPlaybackRate, status: currentItem ? status : "idle", error: currentItem ? error : null,
+    isPlaying: !!currentItem && status === "playing", tsUnsupported: error === "unsupported",
+    canControlPlayback: !!currentItem && !error,
+    handleTogglePlayback, stopPlayback, retry: () => setAttempt((value) => value + 1),
   }
 }

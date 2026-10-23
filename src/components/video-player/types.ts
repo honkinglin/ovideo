@@ -5,6 +5,7 @@ export type VideoItem = {
   name: string
   source: VideoSource
   relativePath?: string
+  identity?: string
   src?: string
   file?: File
 }

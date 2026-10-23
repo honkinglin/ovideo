@@ -1,163 +1,83 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-
-import {
-  comparePlaylistItems,
-  getFileLabel,
-  getNameFromUrl,
-  isTransportStreamFile,
-} from "../utils"
+import { comparePlaylistItems, getFileLabel, getNameFromUrl } from "../utils"
+import { fileIdentity, isVideoFile } from "../import-files"
+import { readStorage, writeStorage } from "../storage"
 import type { VideoItem } from "../types"
 
-export type AddFilesOptions = {
-  sortMode?: "alphabetical"
+export type AddFilesOptions = { sortMode?: "alphabetical" }
+const STORAGE_KEY = "ovideo.playlist.v1"
+function restorePlaylist(): VideoItem[] {
+  const stored = readStorage<unknown>(STORAGE_KEY, [])
+  if (!Array.isArray(stored)) return []
+  return stored.filter((url): url is string => {
+    if (typeof url !== "string") return false
+    try { return ["http:", "https:"].includes(new URL(url).protocol) } catch { return false }
+  }).map((src) => ({ id: crypto.randomUUID(), name: getNameFromUrl(src), source: "remote", src }))
 }
 
-// Manages playlist state, including lazy object URL creation for local files.
 export function useVideoPlaylist() {
-  // State for playlist, current video, and object URLs
-  const [playlist, setPlaylist] = useState<VideoItem[]>([])
+  const [playlist, setPlaylist] = useState<VideoItem[]>(restorePlaylist)
   const [currentId, setCurrentId] = useState<string | null>(null)
   const objectUrlsRef = useRef(new Map<string, string>())
-
-  // Get current playing item
-  const currentItem = useMemo(
-    () => playlist.find((item) => item.id === currentId) ?? null,
-    [playlist, currentId],
-  )
-
-  // Revoke any generated object URLs when the component unmounts.
-  // Cleanup object URLs on unmount
+  const currentItem = useMemo(() => playlist.find((item) => item.id === currentId) ?? null, [playlist, currentId])
   useEffect(() => {
-    return () => {
-      objectUrlsRef.current.forEach((url) => {
-        URL.revokeObjectURL(url)
-      })
-      objectUrlsRef.current.clear()
-    }
+    const urls = objectUrlsRef.current
+    return () => { urls.forEach((url) => URL.revokeObjectURL(url)); urls.clear() }
   }, [])
-
-  // Auto-select the first entry whenever the playlist becomes non-empty.
-  // Auto-select first video when playlist is not empty
   useEffect(() => {
-    if (!playlist.length) {
-      if (currentId !== null) {
-        setCurrentId(null)
-      }
-      return
-    }
-    if (!currentId) {
-      setCurrentId(playlist[0].id)
-    }
-  }, [playlist, currentId])
-
-  // Locate or create a playable source for the provided playlist entry.
-  // Get playable source URL for a playlist item
-  const resolveItemSource = useCallback((item: VideoItem) => {
-    if (item.source === "remote") {
-      return item.src
-    }
-    const existing = objectUrlsRef.current.get(item.id)
-    if (existing) {
-      return existing
-    }
-    if (item.src) {
-      objectUrlsRef.current.set(item.id, item.src)
-      return item.src
-    }
-    if (!item.file) {
-      return undefined
-    }
-    const objectUrl = URL.createObjectURL(item.file)
-    objectUrlsRef.current.set(item.id, objectUrl)
-    return objectUrl
-  }, [])
-
-  // Append local files to the playlist, optionally sorting folder imports by name.
-  // Add local video files to playlist
-  const addLocalFiles = useCallback(
-    (files: FileList | File[], options?: AddFilesOptions) => {
-      const videoFiles = Array.from(files).filter(
-        (file) =>
-          (file.type && file.type.startsWith("video/")) || isTransportStreamFile(file),
-      )
-      if (!videoFiles.length) {
-        return []
-      }
-
-      const newItems: VideoItem[] = videoFiles.map((file) => ({
-        id: crypto.randomUUID(),
-        name: file.name,
-        source: "local",
-        relativePath: getFileLabel(file),
-        file,
-      }))
-
-      const sortedItems =
-        options?.sortMode === "alphabetical"
-          ? [...newItems].sort(comparePlaylistItems)
-          : newItems
-
-      setPlaylist((prev) => [...prev, ...sortedItems])
-      setCurrentId((prevId) => prevId ?? sortedItems[0]?.id ?? null)
-
-      return sortedItems
-    },
-    [],
-  )
-
-  // Normalise a remote URL and append it to the playlist.
-  // Add remote video URL to playlist
-  const addRemoteSource = useCallback((normalizedUrl: string) => {
-    const id = crypto.randomUUID()
-    const item: VideoItem = {
-      id,
-      name: getNameFromUrl(normalizedUrl),
-      src: normalizedUrl,
-      source: "remote",
-    }
-    setPlaylist((prev) => [...prev, item])
-    setCurrentId((prevId) => prevId ?? item.id)
-    return item
-  }, [])
-
-  // Select a video by ID
-  const selectVideo = useCallback((id: string) => {
-    setCurrentId(id)
-  }, [])
-
-  // Remove every playlist entry and release any object URLs.
-  // Clear all videos from playlist and release object URLs
-  const clearPlaylist = useCallback(() => {
-    objectUrlsRef.current.forEach((url) => {
-      URL.revokeObjectURL(url)
-    })
-    objectUrlsRef.current.clear()
-    setPlaylist([])
-    setCurrentId(null)
-  }, [])
-
-  // Advance playback to the next playlist entry when available.
-  // Advance to next video in playlist
-  const playNext = useCallback(() => {
-    setCurrentId((prevId) => {
-      if (!prevId) return prevId
-      const currentIndex = playlist.findIndex((item) => item.id === prevId)
-      if (currentIndex === -1) return prevId
-      const next = playlist[currentIndex + 1]
-      return next ? next.id : prevId
+    writeStorage(STORAGE_KEY, playlist.filter((item) => item.source === "remote").map((item) => item.src))
+    // Release removed items only after React has detached the old video element.
+    const ids = new Set(playlist.map((item) => item.id))
+    objectUrlsRef.current.forEach((url, id) => {
+      if (!ids.has(id)) { URL.revokeObjectURL(url); objectUrlsRef.current.delete(id) }
     })
   }, [playlist])
-
+  const resolveItemSource = useCallback((item: VideoItem) => {
+    if (item.source === "remote") return item.src
+    const existing = objectUrlsRef.current.get(item.id)
+    if (existing) return existing
+    if (!item.file) return undefined
+    const url = URL.createObjectURL(item.file)
+    objectUrlsRef.current.set(item.id, url)
+    return url
+  }, [])
+  const addLocalFiles = useCallback((files: FileList | File[], options?: AddFilesOptions) => {
+    const seen = new Set(playlist.map((item) => item.identity))
+    let skipped = 0
+    const added: VideoItem[] = []
+    for (const file of Array.from(files)) {
+      const identity = fileIdentity(file)
+      if (!isVideoFile(file) || seen.has(identity)) { skipped++; continue }
+      seen.add(identity)
+      added.push({ id: crypto.randomUUID(), name: file.name, source: "local", relativePath: getFileLabel(file), file, identity })
+    }
+    if (options?.sortMode === "alphabetical") added.sort(comparePlaylistItems)
+    setPlaylist((prev) => [...prev, ...added])
+    setCurrentId((id) => id ?? added[0]?.id ?? null)
+    return { added, skipped }
+  }, [playlist])
+  const addRemoteSource = useCallback((src: string) => {
+    const existing = playlist.find((item) => item.src === src)
+    if (existing) return existing
+    const item: VideoItem = { id: crypto.randomUUID(), name: getNameFromUrl(src), src, source: "remote" }
+    setPlaylist((prev) => [...prev, item])
+    return item
+  }, [playlist])
+  const removeVideo = useCallback((id: string) => {
+    const index = playlist.findIndex((item) => item.id === id)
+    setPlaylist((prev) => prev.filter((item) => item.id !== id))
+    setCurrentId((current) => current === id ? (playlist[index + 1] ?? playlist[index - 1])?.id ?? null : current)
+  }, [playlist])
+  const clearPlaylist = useCallback(() => { setPlaylist([]); setCurrentId(null) }, [])
+  const move = useCallback((direction: number, wrap = false) => {
+    const index = playlist.findIndex((item) => item.id === currentId)
+    if (index < 0 || !playlist.length) return
+    const next = wrap ? playlist[(index + direction + playlist.length) % playlist.length] : playlist[index + direction]
+    if (next) setCurrentId(next.id)
+  }, [currentId, playlist])
   return {
-    playlist,
-    currentId,
-    currentItem,
-    hasPlaylist: playlist.length > 0,
-    addLocalFiles,
-    addRemoteSource,
-    selectVideo,
-    clearPlaylist,
-    playNext,
-    resolveItemSource,
+    playlist, currentId, currentItem, hasPlaylist: playlist.length > 0,
+    addLocalFiles, addRemoteSource, selectVideo: setCurrentId, clearPlaylist, removeVideo,
+    playNext: () => move(1), playPrevious: () => move(-1), move, resolveItemSource,
   }
 }

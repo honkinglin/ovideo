@@ -14,7 +14,6 @@ import type { VideoPlayerMessages } from "./i18n"
 
 type PlaybackInfoProps = {
   currentItem: VideoItem | null
-  tsUnsupported: boolean
   isPlaying: boolean
   playbackRate: number
   canControlPlayback: boolean
@@ -25,7 +24,6 @@ type PlaybackInfoProps = {
 
 export function PlaybackInfo({
   currentItem,
-  tsUnsupported,
   isPlaying,
   playbackRate,
   canControlPlayback,
@@ -34,16 +32,13 @@ export function PlaybackInfo({
   messages,
 }: PlaybackInfoProps) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border bg-muted/40 p-4">
+    <div className="flex shrink-0 flex-wrap items-center justify-between gap-4 rounded-lg border border-border bg-muted/40 p-4">
       <div>
         <p className="text-sm font-medium">
           {currentItem ? currentItem.name : messages.noSelection}
         </p>
         {currentItem?.relativePath ? (
           <p className="text-xs text-muted-foreground">{currentItem.relativePath}</p>
-        ) : null}
-        {tsUnsupported ? (
-          <p className="text-xs text-destructive">{messages.tsUnsupported}</p>
         ) : null}
       </div>
 

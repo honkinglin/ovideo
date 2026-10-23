@@ -3,14 +3,16 @@ import react from "@vitejs/plugin-react"
 import { VitePWA } from "vite-plugin-pwa"
 import { fileURLToPath, URL } from "node:url"
 
+const base = `/${(process.env.VITE_BASE || "").replace(/^\/+|\/+$/g, "")}/`.replace(/\/+/g, "/")
+
 // https://vite.dev/config/
 export default defineConfig({
-  base: process.env.VITE_BASE || '/',
+  base,
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+      registerType: 'prompt',
+      includeAssets: ['apple-touch-icon.png', 'logo.svg'],
       manifest: {
         name: 'Ovideo - Modern Web Video Player',
         short_name: 'Ovideo',
@@ -19,8 +21,8 @@ export default defineConfig({
         background_color: '#0f0f23',
         display: 'standalone',
         orientation: 'any',
-        scope: '/',
-        start_url: '/',
+        scope: base,
+        start_url: base,
         categories: ['entertainment', 'multimedia', 'utilities'],
         icons: [
           {
@@ -83,7 +85,7 @@ export default defineConfig({
         ]
       },
       devOptions: {
-        enabled: true
+        enabled: false
       }
     })
   ],

@@ -23,9 +23,11 @@ export function BgCanvas() {
     }
     window.addEventListener("resize", handleResize)
 
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)")
+
     // Particle config
     const particles: { x: number; y: number; vx: number; vy: number }[] = []
-    const PARTICLE_COUNT = Math.floor((width * height) / 12000) // 更少粒子
+    const PARTICLE_COUNT = Math.min(60, Math.floor((width * height) / 20000)) // 更少粒子
     for (let i = 0; i < PARTICLE_COUNT; i++) {
       particles.push({
         x: Math.random() * width,
@@ -36,8 +38,12 @@ export function BgCanvas() {
     }
 
     // Animation loop
-    let animationId: number
-    function animate() {
+    let animationId = 0
+    let previousFrame = 0
+    function animate(now = 0) {
+      animationId = requestAnimationFrame(animate)
+      if (document.hidden || motion.matches || now - previousFrame < 66) return
+      previousFrame = now
       if (!ctx) return
       // 每帧都获取当前主题色
       const isDark = document.documentElement.classList.contains("dark")
@@ -76,7 +82,7 @@ export function BgCanvas() {
             ctx.lineTo(b.x, b.y)
             ctx.strokeStyle = lineColor
             ctx.lineWidth = 0.7 - dist / 140
-            ctx.globalAlpha = 0.18 - dist / 200 // 线更淡
+            ctx.globalAlpha = Math.max(0, 0.18 - dist / 600) // 线更淡
             ctx.stroke()
             ctx.globalAlpha = 1
           }
@@ -91,7 +97,6 @@ export function BgCanvas() {
         if (p.y < 0 || p.y > height) p.vy *= -1
       }
 
-      animationId = requestAnimationFrame(animate)
     }
     animate()
 

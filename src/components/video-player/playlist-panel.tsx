@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from "react"
+import { Input } from "@/components/ui/input"
 import { ListVideo, PlayCircle } from "lucide-react"
 
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -11,14 +13,20 @@ type PlaylistPanelProps = {
   playlist: VideoItem[]
   currentId: string | null
   onSelect: (id: string) => void
+  onRemove: (id: string) => void
+  feedback: VideoPlayerMessages["feedback"]
   messages: VideoPlayerMessages["playlist"]
 }
 
-export function PlaylistPanel({ playlist, currentId, onSelect, messages }: PlaylistPanelProps) {
+export function PlaylistPanel({ playlist, currentId, onSelect, onRemove, feedback, messages }: PlaylistPanelProps) {
+  const [query, setQuery] = useState("")
+  const activeRef = useRef<HTMLButtonElement>(null)
+  useEffect(() => { activeRef.current?.scrollIntoView({ block: "nearest" }) }, [currentId])
+  const visible = playlist.filter((item) => `${item.name} ${item.relativePath ?? ""}`.toLowerCase().includes(query.toLowerCase()))
   const totalLabel = messages.countLabel.replace("{count}", String(playlist.length))
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-lg border border-border">
+    <div className="flex h-[320px] lg:h-full flex-col overflow-hidden rounded-lg border border-border">
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <div className="flex items-center gap-2">
           <ListVideo className="h-4 w-4" />
@@ -26,14 +34,17 @@ export function PlaylistPanel({ playlist, currentId, onSelect, messages }: Playl
         </div>
         <span className="text-xs text-muted-foreground">{totalLabel}</span>
       </div>
+      <div className="p-2"><Input aria-label={feedback.search} placeholder={feedback.search} value={query} onChange={(event) => setQuery(event.target.value)} /></div>
       <ScrollArea className="flex-1">
         <div className="flex flex-col p-2">
-          {playlist.length ? (
-            playlist.map((item, index) => {
+          {visible.length ? (
+            visible.map((item, index) => {
               const isActive = item.id === currentId
               return (
                 <div key={item.id} className="flex flex-col">
                   <button
+                    ref={isActive ? activeRef : undefined}
+                    aria-current={isActive ? "true" : undefined}
                     type="button"
                     onClick={() => onSelect(item.id)}
                     className={cn(
@@ -62,7 +73,8 @@ export function PlaylistPanel({ playlist, currentId, onSelect, messages }: Playl
                       </span>
                     )}
                   </button>
-                  {index < playlist.length - 1 ? (
+                  <button type="button" className="self-end px-3 py-1 text-xs text-muted-foreground hover:text-destructive" aria-label={`${feedback.remove} ${item.name}`} onClick={() => onRemove(item.id)}>{feedback.remove}</button>
+                  {index < visible.length - 1 ? (
                     <Separator className="mx-3 opacity-40" />
                   ) : null}
                 </div>

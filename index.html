@@ -46,16 +46,12 @@
       }
     </script>
 
-    <!-- Contact Info (for search engines) -->
-    <meta name="contact" content="contact@your-domain.com" />
-
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#6366f1" />
     <meta
       name="description"
       content="A feature-rich online video player with playlist management and playback controls"
     />
-    <link rel="manifest" href="manifest.webmanifest" />
 
     <!-- Apple Touch Icon -->
     <link rel="apple-touch-icon" href="icons/icon-192x192.png" />
@@ -74,6 +70,7 @@
     <title>Ovideo - Modern Web Video Player</title>
     <script>
       (() => {
+        try {
         const themeKey = "ovideo.preferences.theme";
         const storedTheme = localStorage.getItem(themeKey);
         const prefersDark = window.matchMedia(
@@ -89,11 +86,12 @@
         const storedLanguage = localStorage.getItem(languageKey);
         document.documentElement.lang =
           storedLanguage === "en" ? "en" : "zh-CN";
+        } catch { /* Storage may be disabled. Keep document defaults. */ }
       })();
     </script>
-    <script type="module" crossorigin src="/ovideo/assets/index-CW0RCf2N.js"></script>
-    <link rel="stylesheet" crossorigin href="/ovideo/assets/index-BklDVgJu.css">
-  <link rel="manifest" href="/ovideo/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/ovideo/registerSW.js"></script></head>
+    <script type="module" crossorigin src="/ovideo/assets/index-D15Hyzeh.js"></script>
+    <link rel="stylesheet" crossorigin href="/ovideo/assets/index-CKC7iHDj.css">
+  <link rel="manifest" href="/ovideo/manifest.webmanifest"></head>
   <body class="min-h-screen bg-background text-foreground">
     <div id="root"></div>
   </body>

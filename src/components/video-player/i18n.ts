@@ -32,6 +32,11 @@ type PlayerSurfaceMessages = {
 }
 
 type PlaylistMessages = {
+  sort: string; sortAsc: string; sortDesc: string; sorted: string; moveUp: string; moveDown: string
+  removed: string; undo: string; matches: string; noMatches: string; clearSearch: string; reorderHint: string
+  progress: string; clearHistory: string; clearHistoryDescription: string; confirmClearHistory: string; cancel: string
+  historyCleared: string; historyFailed: string
+
   title: string
   countLabel: string
   empty: string
@@ -137,6 +142,10 @@ const translations: Record<Language, VideoPlayerMessages> = {
     },
     playlist: {
       title: "播放列表",
+      sort: "排序整个列表", sortAsc: "名称升序（1、2、10）", sortDesc: "名称降序", sorted: "列表顺序已更新，当前播放不受影响。", moveUp: "上移", moveDown: "下移",
+      removed: "已移除 {name}", undo: "撤销移除", matches: "找到 {count} 个视频。", noMatches: "没有匹配的视频，试试其他名称或路径。", clearSearch: "清除搜索", reorderHint: "清除搜索后可手动调整顺序。",
+      progress: "已看到 {time}", clearHistory: "清除观看记录", clearHistoryDescription: "删除此浏览器保存的全部观看进度，不移除播放列表或偏好设置。当前播放不停止；继续观看会重新记录进度。", confirmClearHistory: "确认清除记录", cancel: "取消",
+      historyCleared: "观看记录已清除。继续观看会重新记录进度。", historyFailed: "无法清除记录，请检查浏览器存储权限后重试。",
       countLabel: "{count} 个视频",
       empty: "播放列表为空，添加本地文件或在线视频即可开始。",
       localSource: "本地文件",
@@ -216,6 +225,10 @@ const translations: Record<Language, VideoPlayerMessages> = {
     },
     playlist: {
       title: "Playlist",
+      sort: "Sort entire playlist", sortAsc: "Name ascending (1, 2, 10)", sortDesc: "Name descending", sorted: "Playlist reordered. Current playback is unchanged.", moveUp: "Move up", moveDown: "Move down",
+      removed: "Removed {name}", undo: "Undo removal", matches: "{count} matching videos.", noMatches: "No matching videos. Try another name or path.", clearSearch: "Clear search", reorderHint: "Clear search to reorder manually.",
+      progress: "Watched to {time}", clearHistory: "Clear watch history", clearHistoryDescription: "Delete all saved playback positions in this browser, keeping the playlist and preferences. Playback continues; further viewing records new progress.", confirmClearHistory: "Confirm clear history", cancel: "Cancel",
+      historyCleared: "Watch history cleared. Further viewing will save new progress.", historyFailed: "Unable to clear history. Check browser storage permissions and retry.",
       countLabel: "{count} videos",
       empty: "The playlist is empty. Import local files or add online videos to begin.",
       localSource: "Local file",

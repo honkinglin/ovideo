@@ -58,6 +58,7 @@ export function VideoPlayer() {
     selectVideo,      // Select video by ID
     clearPlaylist,    // Clear all videos from playlist
     playNext, playPrevious, move, removeVideo,
+    sortPlaylist, reorderVideo, undoRemove, removedName,
     resolveItemSource // Resolve video source URL
   } = useVideoPlaylist()
 
@@ -294,6 +295,10 @@ export function VideoPlayer() {
               currentId={currentId}
               onSelect={handleSelectVideo}
               onRemove={removeVideo}
+              onSort={sortPlaylist}
+              onReorder={reorderVideo}
+              removedName={removedName}
+              onUndo={undoRemove}
               feedback={messages.feedback}
               messages={messages.playlist}
             />

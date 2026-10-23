@@ -223,3 +223,10 @@ Open **Subtitles, segment loop & shortcuts** beneath the video controls.
 | Backslash | Clear the segment |
 
 App shortcuts apply when focus is outside inputs, buttons, dialogs, and native video controls. Those elements keep their own keyboard behavior; modifier keys and IME composition are ignored.
+
+## Playlist organization and watch history
+
+- Sort the entire playlist naturally by name/path (for example, 1, 2, 10), or move individual items up/down. Reordering keeps the current video and playback position. Remote item order is retained after reload; local files must be reselected.
+- Search matches names and paths. An empty search result offers a clear-search action. Manual reorder is disabled during filtering so hidden items are not moved unexpectedly; the sort menu explicitly sorts the whole list.
+- Removing an item offers a one-step **Undo removal** action until another removal or playlist clearing. Undo restores its original position without interrupting another selected video. Clearing the playlist also clears the undo state.
+- Saved playback positions appear in playlist rows. **Clear watch history** asks for confirmation and removes stored positions without removing the playlist or changing preferences. A paused video does not restore a cleared position on exit; further viewing creates new progress records.

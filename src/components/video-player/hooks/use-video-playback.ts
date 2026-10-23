@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { isTransportStreamSource } from "../utils"
 import { readStorage, writeStorage } from "../storage"
+import { HISTORY_CLEARED_EVENT, HISTORY_KEY, historyKey, readHistory, savePosition } from "../history"
 import type { MpegtsModule, VideoItem } from "../types"
 
 export type PlaybackStatus = "idle" | "loading" | "playing" | "paused" | "buffering" | "ended" | "error"
 export type PlaybackError = "unsupported" | "network" | "decode" | "unknown" | null
 const SETTINGS = "ovideo.playback.v1"
-const HISTORY = "ovideo.history.v1"
 type Settings = { rate: number; volume: number; muted: boolean }
 function settings(): Settings {
   const value = readStorage<Partial<Settings> | null>(SETTINGS, null)
@@ -15,11 +15,6 @@ function settings(): Settings {
     volume: typeof value?.volume === "number" && value.volume >= 0 && value.volume <= 1 ? value.volume : 1,
     muted: value?.muted === true,
   }
-}
-function history(): Record<string, number> {
-  const value = readStorage<unknown>(HISTORY, {})
-  if (!value || typeof value !== "object" || Array.isArray(value)) return {}
-  return Object.fromEntries(Object.entries(value).filter(([, time]) => typeof time === "number" && Number.isFinite(time) && time >= 0))
 }
 
 export function useVideoPlayback({ videoRef, currentItem, resolveItemSource }: {
@@ -44,14 +39,19 @@ export function useVideoPlayback({ videoRef, currentItem, resolveItemSource }: {
     let player: ReturnType<MpegtsModule["createPlayer"]> | undefined
     let lastSave = 0
     let metadataLoaded = false
-    const key = currentItem.identity ?? currentItem.src ?? currentItem.id
+    const key = historyKey(currentItem)
+    let clearedAt: number | null = null
+    const onHistoryCleared = () => { clearedAt = video.currentTime }
+    const onStorage = (event: StorageEvent) => {
+      if ((event.key === HISTORY_KEY || event.key === null) && Object.keys(readHistory()).length === 0) onHistoryCleared()
+    }
     const fail = (reason: PlaybackError) => { if (active) { setError(reason); setStatus("error") } }
     const saveProgress = () => {
       if (!metadataLoaded || !Number.isFinite(video.currentTime)) return
-      const records = history()
-      delete records[key]
-      records[key] = video.ended ? 0 : video.currentTime
-      writeStorage(HISTORY, Object.fromEntries(Object.entries(records).slice(-200)))
+      // Clearing history while paused must survive pause, unload and source cleanup.
+      if (clearedAt !== null && Math.abs(video.currentTime - clearedAt) < 0.1) return
+      clearedAt = null
+      savePosition(key, video.ended ? 0 : video.currentTime)
     }
     const saveSettings = () => {
       setPlaybackRate(video.playbackRate)
@@ -67,7 +67,7 @@ export function useVideoPlayback({ videoRef, currentItem, resolveItemSource }: {
     }
     const metadata = () => {
       metadataLoaded = true
-      const position = history()[key]
+      const position = readHistory()[key]
       if (position > 0 && Number.isFinite(video.duration) && position < video.duration - 3) video.currentTime = position
       video.playbackRate = playbackRateRef.current
       void play()
@@ -81,6 +81,8 @@ export function useVideoPlayback({ videoRef, currentItem, resolveItemSource }: {
     const events = { loadedmetadata: metadata, playing, pause, waiting, ended, error: mediaError, timeupdate: timeUpdate, volumechange: saveSettings, ratechange: saveSettings }
     Object.entries(events).forEach(([name, handler]) => video.addEventListener(name, handler))
     window.addEventListener("pagehide", saveProgress)
+    window.addEventListener(HISTORY_CLEARED_EVENT, onHistoryCleared)
+    window.addEventListener("storage", onStorage)
     const initial = settings()
     video.playbackRate = playbackRateRef.current
     video.volume = initial.volume
@@ -112,6 +114,8 @@ export function useVideoPlayback({ videoRef, currentItem, resolveItemSource }: {
       saveProgress()
       Object.entries(events).forEach(([name, handler]) => video.removeEventListener(name, handler))
       window.removeEventListener("pagehide", saveProgress)
+      window.removeEventListener(HISTORY_CLEARED_EVENT, onHistoryCleared)
+      window.removeEventListener("storage", onStorage)
       video.pause()
       if (player) { player.detachMediaElement(); player.destroy() }
       video.removeAttribute("src")

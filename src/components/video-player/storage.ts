@@ -6,5 +6,8 @@ export function readStorage<T>(key: string, fallback: T): T {
   } catch { return fallback }
 }
 export function writeStorage(key: string, value: unknown) {
-  try { localStorage.setItem(key, JSON.stringify(value)) } catch { /* Optional persistence. */ }
+  try {
+    localStorage.setItem(key, JSON.stringify(value))
+    return true
+  } catch { return false }
 }
